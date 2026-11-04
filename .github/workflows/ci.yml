@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: { python-version: "3.12" }
       - run: pip install vermin==1.9.1 && git ls-files '*.py' | xargs vermin -q --no-tips --violations -t=3.10- --eval-annotations
   python-tests:
@@ -16,7 +16,7 @@ jobs:
       matrix: { python: ["3.10", "3.12"] }
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: { python-version: "${{ matrix.python }}", cache: pip }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "17" }
