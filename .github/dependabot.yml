@@ -4,7 +4,12 @@ updates:
     directory: "/"
     schedule: { interval: weekly }
     groups: { python: { patterns: ["*"] } }
+    # The docling family is pinned as a validated set (see requirements.txt);
+    # bumping any one of them conflicts with the others.
     ignore:
+      - dependency-name: "docling"
+      - dependency-name: "docling-slim"
+      - dependency-name: "docling-core"
       - dependency-name: "docling-parse"
       - dependency-name: "docling-ibm-models"
   - package-ecosystem: maven
