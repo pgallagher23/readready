@@ -1,4 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+# Portions derived from Content Accessibility Utility on AWS
+# (https://github.com/awslabs/content-accessibility-utility-on-aws),
+# Copyright 2025 Amazon.com, Inc. or its affiliates, Apache-2.0.
+# Modified by the ReadReady project; see NOTICE.
 """Landmark remediation strategies.
 
 Adds missing main, nav, header, footer, and skip-link elements.

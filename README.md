@@ -210,6 +210,10 @@ Everything you customize lives in the `branding:` section: product name, header 
 
 Licensed under AGPL-3.0-or-later; see [LICENSE](LICENSE). The tagger is built on iText and the PDF libraries use PyMuPDF, both AGPL-3.0, so the combined work is AGPL. Third-party components are listed in [NOTICE](NOTICE).
 
+## Acknowledgements
+
+The WCAG audit checks and several remediation strategies began as modified copies of Amazon's [Content Accessibility Utility on AWS](https://github.com/awslabs/content-accessibility-utility-on-aws) (Apache-2.0), which we found through the ASU AI Cloud Innovation Center's [PDF_Accessibility](https://github.com/ASUCICREPO/PDF_Accessibility) project. The derived files carry the original copyright notice; the license text is in [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
+
 ## Status
 
 Version 1.0.0. See [CHANGELOG.md](CHANGELOG.md) and [CONTRIBUTING.md](CONTRIBUTING.md).

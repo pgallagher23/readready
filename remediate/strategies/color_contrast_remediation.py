@@ -1,4 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+# Portions derived from Content Accessibility Utility on AWS
+# (https://github.com/awslabs/content-accessibility-utility-on-aws),
+# Copyright 2025 Amazon.com, Inc. or its affiliates, Apache-2.0.
+# Modified by the ReadReady project; see NOTICE.
 """Color contrast remediation strategies.
 
 WCAG 1.4.3 — Fix insufficient text contrast (4.5:1 / 3:1 for large text).

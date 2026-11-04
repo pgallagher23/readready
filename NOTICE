@@ -1,6 +1,15 @@
 ReadReady — Copyright (C) 2026 Western Michigan University Libraries
 Licensed under the GNU Affero General Public License v3.0 or later.
 
+Portions of audit/ and remediate/ are derived from
+Content Accessibility Utility on AWS
+(https://github.com/awslabs/content-accessibility-utility-on-aws),
+Copyright 2025 Amazon.com, Inc. or its affiliates, licensed under Apache-2.0
+(see LICENSES/Apache-2.0.txt). Those files are modified; each carries a
+header naming the origin. The code was obtained via the ASU AI Cloud
+Innovation Center's PDF_Accessibility project
+(https://github.com/ASUCICREPO/PDF_Accessibility, MIT), which vendors it.
+
 Third-party components (not bundled in this repository unless stated):
 - iText Core 9.5 — AGPL-3.0 — https://itextpdf.com  (built into output_gen/itext_tagger.jar)
 - PyMuPDF — AGPL-3.0 — https://pymupdf.readthedocs.io
