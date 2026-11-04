@@ -2,8 +2,8 @@
 # Upper bounds freeze the last corpus-validated combination (2026-06-24 upgrade).
 # docling-parse pinned exactly: 7.5/7.7.1 changed font resolution and word
 # extraction — do not bump without a corpus regression A/B.
-docling>=2.107.0,<2.108
-docling-core>=2.84.0,<2.85
+docling>=2.145.0,<2.146
+docling-core>=2.105.0,<2.106
 docling-parse==7.0.0
 # docling-ibm-models pinned exactly: 3.13.1+ fixed predict_merges so paragraphs
 # are glued ACROSS PAGE BREAKS into multi-prov items; our converter uses prov[0]
@@ -12,47 +12,47 @@ docling-parse==7.0.0
 docling-ibm-models==3.13.0
 
 # PDF utilities
-PyMuPDF>=1.25.0
-pypdf>=5.4.0
-fonttools>=4.50.0
-pikepdf>=9.0.0  # broken-font preprocessing (output_gen/pdf_tagger.py) and diagnostic CLIs (output_gen/fix_parent_tree.py)
+PyMuPDF>=1.28.2
+pypdf>=6.21.4
+fonttools>=4.65.0
+pikepdf>=10.13.0.post1  # broken-font preprocessing (output_gen/pdf_tagger.py) and diagnostic CLIs (output_gen/fix_parent_tree.py)
 
 # HTML processing
-beautifulsoup4>=4.11.0
-lxml>=5.0.0
+beautifulsoup4>=4.15.0
+lxml>=6.1.3
 
 # Image handling
-Pillow>=11.1.0
+Pillow>=12.3.0
 
 # Language detection
 langdetect>=1.0.9
 
 # OCR quality scoring (per-page wordfreq.zipf_frequency hit ratio)
-wordfreq>=3.0
+wordfreq>=3.1.1
 
 # Filename-slug word segmentation (descriptive-title fallback)
 wordninja>=2.0
 
 # Configuration
-PyYAML>=6.0.0
-pydantic>=2.10.0
-python-dotenv>=1.0.0
+PyYAML>=6.0.3
+pydantic>=2.14.2
+python-dotenv>=1.2.4
 
 # Optional: PDF output from HTML
-weasyprint>=62.0
+weasyprint>=70.0
 
 # LLM client
-requests>=2.31.0
-anthropic>=0.52.0
+requests>=2.34.2
+anthropic>=2.3.0
 
 # Web interface
-gradio>=6.11.0
+gradio>=6.31.0
 
 # Task queue (optional — app falls back to sync mode if missing)
-celery[redis]>=5.3.0
-redis>=5.0.0
-flower>=2.0.0
+celery[redis]>=5.6.3
+redis>=8.1.0
+flower>=2.2.0
 
 # Test suite (make test)
-pytest>=8.0
-vermin==1.9.1
+pytest>=9.2.0
+vermin==1.9.2
