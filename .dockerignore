@@ -1,0 +1,63 @@
+.venv/
+.git/
+.github/
+.claude/
+.env
+__pycache__/
+*.pyc
+*.log
+
+# Directories not needed at runtime
+output/
+input/
+docs/
+assets/
+com/
+pdfaccessibility/
+scripts/
+!scripts/prefetch_models.py
+security_assessment_report.*
+tests/arol_review_samples/
+tests/full_pipeline_results/
+tests/phase0_experiments/
+tests/manifest_*
+tests/run*.log
+tests/run*.py
+tests/*.log
+tests/*.txt
+tests/*.md
+tests/*.html
+tests/test_pdfs/
+tests/build_*.py
+tests/compare_*.py
+tests/generate_*.py
+tests/sweep_*.py
+
+# JAR backups (~500MB); the tagger JAR is built from source in the jar stage
+output_gen/itext_tagger.jar
+output_gen/itext_src/target/
+output_gen/*.jar.bak*
+output_gen/*.jar.broken
+output_gen/*.jar.pre*
+output_gen/*.jar.phase*
+output_gen/*.jar.prescan*
+
+# Test data
+tests/axe*
+tests/*.json
+tests/*.csv
+
+# Editor/IDE scratch files
+untitled:*
+*.prompt.md
+
+# Local experiment scratch — build context only, never runtime
+out_spike/
+reports/
+spike_*.yaml
+*.pptx
+tests/mathml_ab_*/
+
+# Worktree and plan scratch
+.worktrees/
+.superpowers/

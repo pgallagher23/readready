@@ -1,0 +1,442 @@
+# ReadReady configuration
+
+# VLM settings
+# provider: "ollama" for local Ollama, "openai" for OpenRouter/OpenAI-compatible
+llm:
+  provider: "ollama"
+
+  # -- Ollama settings (used when provider: "ollama") --
+  base_url: "http://localhost:11434"
+  # Stock qwen2.5vl:7b works out of the box. num_ctx sets the context window
+  # per request; a larger window reserves more VRAM, so lower it if the model
+  # collides with Docling's GPU layout pass on a small card.
+  model: "qwen2.5vl:7b"
+  num_ctx: 8192  # context window; the stock tag's default context window may be too small for table-structure prompts; 8192 is the validated value
+
+  # Text-only model for table structure analysis (no vision needed).
+  # Same model as vision: a second text model would be a second resident
+  # runner, causing Ollama to evict one model for the other mid-run.
+  text_model: "qwen2.5vl:7b"
+
+  # -- Anthropic settings (used when provider: "anthropic") --
+  anthropic_model: "claude-haiku-4-5-20251001"
+  anthropic_text_model: "claude-haiku-4-5-20251001"  # text-only tasks (table structure)
+
+  # -- OpenAI-compatible settings (used when provider: "openai") --
+  openai_base_url: "https://openrouter.ai/api/v1"
+  openai_model: "google/gemini-2.0-flash-001"
+  openai_text_model: "google/gemini-2.0-flash-001"   # text-only tasks (table structure)
+
+  # -- Shared settings --
+  api_key: ""           # Set via env var: ANTHROPIC_API_KEY or OPENROUTER_API_KEY
+  temperature: 0.7
+  max_tokens: 1000
+  max_parallel: 8  # concurrent VLM calls per document (IO-bound; Ollama serializes on GPU anyway)
+  # Per-document limits to prevent excessive VLM API usage
+  max_images_per_document: 200
+  max_tables_per_document: 200
+
+# Docling conversion settings
+conversion:
+  # Document language override. Set to "auto" for auto-detection,
+  # or an ISO 639-1 code (e.g., "en", "es", "fr") to skip detection.
+  language: "auto"
+  # Export one HTML file per page, or a single combined file
+  multi_page: true
+  # Extract and save images separately
+  extract_images: true
+  # Recover author-written /Alt from the source PDF's structure tree before
+  # the audit and the VLM run.  Docling rebuilds structure from visual layout
+  # alone, so without this an already-remediated upload loses its alt text.
+  # Author-written alt always takes priority over AI-generated alt.
+  harvest_source_alt: true
+  # Image format for extracted images
+  image_format: "png"
+  # Embed images as base64 data URIs in the HTML (self-contained, no external refs)
+  embed_images: true
+  # Run OCR on scanned/image-only pages.  Default true — Docling's per-page
+  # bitmap_area_threshold automatically applies OCR only to pages with
+  # significant bitmap area; text-based pages use fast native extraction.
+  # Set to false to disable OCR entirely (faster, but scanned pages get
+  # no text).  Legacy value "auto" maps to true.
+  do_ocr: true
+  # Force full-page OCR when the document classifies as fully_scanned.
+  # Docling's own OCR triggers (programmatic text, bitmap coverage) are both
+  # blind to vectorized scans (glyphs drawn as filled paths — no text, no
+  # bitmaps), which otherwise silently get NO OCR and lose all structure.
+  # No-op for ordinary bitmap scans (measured byte-identical) and never
+  # applied to mixed/text documents.
+  force_ocr_scanned: true
+  # Pre-pass: inject correct /ToUnicode CMaps into the source PDF (via the
+  # iText tagger's --tag-mode fix-fonts) BEFORE Docling converts, when the
+  # PDF's text extraction looks corrupted (control chars / PUA from Type-3
+  # LaTeX fonts that lack ToUnicode). This makes the screen-reader /ActualText
+  # — which is sourced from Docling — read correct words instead of garbled
+  # ligatures (e.g. "define" instead of "deWne"). Set false to disable.
+  fix_fonts_prepass: true
+  # Bad-char ratio (control + PUA chars) above which the font-fix pre-pass
+  # triggers. Legitimate body text is ~0%; corrupted Type-3 extraction is >0.3%.
+  fix_fonts_prepass_threshold: 0.003
+  # Recover text from pages where Docling produced no structural elements.
+  # Uses PyMuPDF to extract text blocks from the source PDF and injects
+  # them as fallback P elements into the structure JSON before tagging.
+  # Recovers bibliography, appendix, and other pages Docling skips.
+  fallback_text: true
+  # Minimum word count on a source page for fallback/OCR recovery to attempt
+  # it.  Pages below this threshold are assumed decorative or blank and are
+  # left unrecovered by both Phase 1b (fallback) and Phase 1c (OCR).
+  # Lowered from 10 to 3 to recover sparse-but-meaningful pages (title pages,
+  # certificates, single-heading pages).
+  fallback_min_words: 3
+  # OCR recovery for interior scanned/image-only pages that have no native
+  # text layer.  Runs AFTER fallback_text recovery (Phase 1c).  Only targets
+  # pages with zero Docling elements AND fewer than fallback_min_words native
+  # words.  Requires Tesseract (apt install tesseract-ocr); gracefully skips
+  # if Tesseract is unavailable.
+  ocr_recovery: true
+  # DPI for Tesseract OCR rendering (Phase-3 recovery; runs only on pages
+  # with no text layer). Measured 2026-08-27 on scanned sample pages (mean word
+  # confidence / seconds per page): 72 -> 65%/0.6s, 150 -> 86%/1.0s,
+  # 300 -> 85%/1.5s (vector-rendered pages: 69/95.5/95.8%). 150 dominates
+  # 300; going below 150 measurably garbles text.
+  ocr_dpi: 150
+  # DPI for rendering element/table regions sent to VLM for alt text and
+  # captions.  VLM models resize inputs to 336-768px internally, so high
+  # DPI yields diminishing returns.  Lower = faster + less memory.
+  # 200 (old default) is safe; 150 is a good throughput/quality trade-off.
+  vlm_render_dpi: 200
+  # Promote existing page content to the document heading (h1). Two cases:
+  #   * zero-heading documents — flat typography (single font size) defeats
+  #     Docling's size-delta heuristic;
+  #   * documents whose headings start at h2 — retag the first usable
+  #     sub-heading (see heading_promote_subheading).
+  # Never invents text: it can only retag content already on the page, and
+  # abstains when no candidate is convincing. This is the master switch for
+  # every promotion path, both the converter (structure JSON -> tagged PDF)
+  # and the HTML remediation path; false means such documents ship with no
+  # h1, which is informational, not a WCAG failure.
+  detect_document_heading: true
+  heading_promote_first_text: true   # rung-2 escape hatch: false = disable first-text promotion on zero-heading docs (title-match unaffected)
+  # Retag an existing h2-h6 as the document h1. Independent
+  # of the zero-heading rungs above; false leaves author sub-headings alone.
+  heading_promote_subheading: true
+  # Layout model: "heron" (fast), "egret_large" (higher accuracy, slower),
+  # "egret_xlarge" (highest accuracy, slowest). On RTX 5090 with batch_size=32 +
+  # flash-attn, egret_xlarge runs within +2-3% wall-clock of heron.
+  layout_model: "egret_xlarge"
+  # Table structure mode: "fast" or "accurate" (slower, better cell detection)
+  table_mode: "accurate"
+  # Hardware device for Docling model inference: "auto" (detect GPU/CPU),
+  # "cuda" (NVIDIA GPU), "cuda:0"/"cuda:1" (specific GPU), "cpu" (force CPU),
+  # "mps" (Apple Silicon). Auto is recommended — uses GPU when available.
+  device: "auto"
+  # Batch size for layout/table/OCR models. Higher = faster on GPU, more VRAM.
+  # Default 32 for GPU, 4 for CPU. With 32GB VRAM (e.g. RTX 5090), 32-64 works well.
+  batch_size: 32
+  # Number of CPU threads for model inference (default 8).
+  num_threads: 8
+  # Enable Flash Attention 2 for faster transformer inference on CUDA.
+  # Requires flash-attn package and Ampere+ GPU (RTX 30xx/40xx/50xx).
+  cuda_flash_attention2: true
+  # Offline mode: prevent HuggingFace Hub from checking for model updates.
+  # Models must already be cached locally. Set to true for air-gapped or
+  # controlled environments where model updates should be reviewed first.
+  offline_models: false
+
+# Audit settings
+# Every WCAG check runs; there are no per-check switches.
+audit: {}
+
+# Verdict thresholds — controls when the banner shows "Valid" vs "Needs Review"
+verdict:
+  # Minimum WCAG compliance score (0-100). 100 = all A/AA criteria pass.
+  min_wcag_score: 100.0
+  # Minimum text coverage ratio (0.0-1.0). Measures word overlap between
+  # source and tagged PDF. Lower values tolerate more artifact/encoding noise.
+  min_coverage: 0.80
+  # Minimum element match rate (0-100). Measures what fraction of semantic
+  # elements were matched to content stream runs. Only checked when
+  # content-preserving mode ran successfully (None = always Needs Review).
+  min_element_match_rate: 85
+  # Relaxed EMR floor applied only when text coverage corroborates that
+  # content is present (avg_coverage >= min_coverage). In that case a low EMR
+  # reflects benign attribution noise (over-segmentation, text-less figures),
+  # not missing content, so the EMR requirement drops to this floor. Below the
+  # floor the doc still needs review even at high coverage — that band signals
+  # genuine structural collapse, not noise. Set equal to min_element_match_rate
+  # to disable the relaxation.
+  min_element_match_rate_when_covered: 70
+  # Relaxed run-match corroboration floor — FULLY-NATIVE docs only. When text
+  # coverage corroborates content is present (avg_coverage >= min_coverage) AND
+  # this fraction of content-stream runs were attributed to the tag tree, a low
+  # element_match_rate is benign over-segmentation (phantom/duplicate/cell-split
+  # Docling elements with no distinct run), not missing content. Excluded for
+  # docs with any scanned page (the OCR gate governs those). Set to 100 to
+  # disable the relaxation.
+  min_run_match_rate_when_covered: 80
+  # Whether any hollow pages (zero tagged text) force Needs Review.
+  reject_hollow_pages: true
+  # Coverage threshold for struct tree validator warnings (0-100).
+  # Pages above this level get "info" instead of "warning".  Defaults to
+  # min_coverage * 100 so warnings align with the verdict threshold.
+  coverage_warn_pct: 80
+  # ── Screen-reader coverage DIAGNOSTICS (do NOT gate the verdict) ──
+  # The blocking coverage gate is min_coverage (above). The keys below only
+  # tune diagnostics: which pages are flagged "low coverage" in the
+  # Improvement Guide, and the sr_quality label used in overlay/fallback mode
+  # (when no element-match data exists). Defaults preserve historical behavior.
+  sr_page_low_coverage: 0.50      # a page below this ratio is listed as low-coverage (informational only)
+  sr_quality_poor_coverage: 0.50  # overlay/fallback: document-avg coverage below this -> sr_quality "poor"
+  sr_quality_fair_coverage: 0.70  # overlay/fallback: document-avg coverage below this -> sr_quality "fair"
+  # Minimum share of scanned pages that must score "fair" or better on
+  # the OCR-quality check (0.0-1.0). Applies only when the source PDF
+  # has at least one scanned (image-only) page; native-text pages are
+  # graded by min_element_match_rate instead.
+  min_ocr_pages_passing_pct: 0.80
+  # Minimum per-page reading-order correlation (Kendall's tau, -1.0..1.0) between
+  # the tagged structure-tree DFS order (what a screen reader reads) and the
+  # tagged file's own column-aware visual order (pdftotext -layout). The worst
+  # eligible page must score >= this. Pages with too few aligned words, scanned
+  # pages, structurally table-dominated pages (row-major cell order legitimately
+  # differs from spatial order), and undecoded CID/Type3 pages are all excluded;
+  # if no page is eligible the gate is skipped and
+  # never blocks. This measures AGREEMENT with an independent reading-order
+  # extractor, NOT ground truth — a low score means reading order is uncertain,
+  # so the doc is surfaced for the manual pass, never auto-rejected or
+  # reordered. 0.5-0.7 is a stable flagging plateau on sample documents.
+  min_reading_order_tau: 0.6
+  # Report a low tau as a best-practice finding instead of failing the document.
+  # A tau disagreement is not a WCAG failure: 1.3.2 is audited separately by
+  # ReadingOrderCheck (tabindex / CSS reorder / absolute positioning), and the
+  # labelled 36-document study found 0/36 flagged documents that actually
+  # read wrong to a screen reader — at every tau band, including <0.2. In a
+  # large batch this gate alone accounted for over half of the Needs Review
+  # documents, all of which scored 100% on WCAG with no unresolved issues. Detection, telemetry, and reporting are unchanged; the
+  # finding still appears on the banner and in the guide. Set false to restore
+  # the blocking gate. Do NOT instead lower min_reading_order_tau: tau
+  # magnitude does not predict real defects, so that suppresses at random.
+  reading_order_advisory: true
+  # Two-witness reading order: score the tag-tree order against a SECOND independent
+  # visual extractor (PyMuPDF) alongside pdftotext -layout, and flag a page only when
+  # BOTH disagree. This raises the bar to flag (precision up, no recall loss) and cuts ~45% of false positives where
+  # pdftotext mis-threads multi-column layouts. Set false to restore single-witness.
+  reading_order_two_witness: true
+  # Figure/Formula elements carry VLM-generated descriptions (/Alt or /ActualText),
+  # not the page's visible running text. Those tokens have no visual position to
+  # align against, so they scramble the tau and create false low-tau flags on
+  # figure-heavy (scanned) and formula-heavy (math) documents. Drop them from the
+  # reading-order token stream so a figure/formula-dominated page becomes an honest
+  # no-op instead of a false flag. Set false to include them (pre-fix behavior).
+  reading_order_exclude_figure_text: true
+  # Suppress reading-order flags on pages whose tag-tree text is space-less glued
+  # word-runs (Type3/LaTeX-math /ActualText). Such pages extract as concatenated
+  # tokens, so the tag-tree-vs-visual token alignment is unreliable and the tau is
+  # noise — a low value there is an extraction artifact, not a real ordering defect.
+  # The scorer treats a page as a no-op when >30% of its tokens exceed 15 chars
+  # (measured: normal English pages 0-3% glued, Type3-math pages 33-59%). This
+  # complements the existing median-length degeneracy guard, which short repeated
+  # function words can mask. Set false to restore the pre-fix behavior (kill-switch).
+  reading_order_glued_guard: true
+  # Suppress reading-order flags on GEOMETRICALLY tabular pages: >=50% of the
+  # page's non-blank pdftotext-layout lines contain a >=3-space internal gap
+  # (the column-gutter signature of visual tables / side-by-side layouts that
+  # Docling tags as flat P — unreachable by the structural Table exclusion).
+  # No meaningful 1-D reading order exists there, so a low tau is row-vs-column
+  # ambiguity, not a defect (in testing, most such failing pages had no
+  # structural table at all; a known true defect measures 0.14, far below the
+  # 0.5 threshold). Set false to restore the pre-fix behavior (kill-switch).
+  reading_order_geo_tabular_guard: true
+  # Small-sample significance for the reading-order tau: with fewer than 40
+  # aligned tokens on a page, a tau just under the 0.6 threshold is sampling
+  # noise. The page flags only when tau < threshold - 1.64*sigma_tau(n)
+  # (bars: n=15 -> 0.28, n=26 -> 0.37, n=39 -> 0.42); the noise band becomes an
+  # inconclusive no-op. DEFAULT OFF: an offline A/B showed 4 of the 8
+  # docs this band suppresses are verified real reading-order defects not
+  # fixed elsewhere — an unacceptable recall cost. Kept behind this switch
+  # for future recalibration only.
+  reading_order_small_n_guard: false
+  # Split hyphenated tokens on both sides of the reading-order alignment:
+  # pdftotext preserves line-break hyphenation ("rese-arch") while /ActualText
+  # carries the dehyphenated form, so without the split hyphen-rich pages
+  # (references sections) mis-align and produce false low-tau flags. Set false
+  # to restore the pre-fix tokenization (kill-switch).
+  reading_order_hyphen_normalize: true
+  # Corroborate matching-time page deficits against authoritative post-tagging
+  # coverage before surfacing "Content not linked to screen-reader text". The
+  # matching-time deficit (from the content matcher) is computed on the ORIGINAL
+  # content runs, before the tagger strips duplicate invisible-text layers, so a
+  # page that carried such a layer shows a false deficit even though the final
+  # tagged PDF reads fine. Keep a deficit only when post-tagging page coverage is
+  # below min_coverage (0.80). Content-preserving mode only; display-only (never
+  # gates the verdict). Set false to restore the raw matching-time pass-through.
+  corroborate_page_deficits: true
+
+# Per-page OCR text-quality scorer (audit/ocr_quality.py).
+# Used to flag scanned pages whose OCR'd text is garbled — e.g. rotated
+# or vertically-oriented source text that Tesseract misread.
+ocr_quality:
+  # Composite score thresholds (0.0-1.0).
+  good_threshold: 0.65
+  fair_threshold: 0.40
+  # Minimum characters in tagged text before scoring; shorter pages
+  # are skipped (returned as "fair" with signals.skipped=True).
+  min_text_chars: 30
+  # Language hint for wordfreq + langdetect. "en" works for all English
+  # corpora; non-English docs should set this from result["language"].
+  lang_hint: "en"
+  # wordfreq Zipf cutoff for "real word" (3.0 ~= 1 per million words).
+  zipf_threshold: 3.0
+
+# Formula remediation settings
+formulas:
+  # Enable formula detection and VLM captioning
+  enabled: true
+  # Send formula images to VLM for natural language description + LaTeX
+  vlm_captioning: true
+  # Attempt LaTeX → MathML conversion in HTML output (best-effort)
+  mathml_conversion: true
+  # Also embed the MathML into the tagged PDF as an Associated File
+  # (/AF, AFRelationship /Supplement) on each Formula element. Additive to the
+  # /Alt caption (which always stays as the universal fallback). PDF 2.0 feature,
+  # off by default.
+  mathml_pdf_embed: false
+  # Include surrounding text context in VLM prompt for better descriptions
+  include_context: true
+  # Maximum formulas to process per document (prevents excessive VLM usage)
+  max_per_document: 200
+
+# LLM fallback for ambiguous table header analysis
+table_analysis:
+  enabled: true
+  max_retries: 2          # retries per LLM call on parse failure
+  max_tables_per_document: 30  # cap LLM calls per document
+
+# Remediation settings
+remediation:
+  fix_tables: true
+  # Structural fixes for converter-flattened content (WCAG 1.3.1 / 2.4.6)
+  convert_pipe_tables: true   # rebuild <p>A|B</p> runs as tables/dl
+  fix_document_title: true    # replace filename-like <title>/<h1> with prose title
+  fix_heading_nesting: true   # nest flat sub-sections under Level/Part/... anchors
+
+# Output settings
+output:
+  # Generate accessible PDF
+  generate_pdf: true
+  # PDF generation engine: auto | itext | weasyprint
+  # auto = uses itext (requires Java 11+ and itext_tagger.jar),
+  #        falls back to weasyprint if Java is unavailable.
+  # itext injects tags into the ORIGINAL PDF, preserving layout.
+  # weasyprint re-renders from HTML — layout will differ from the original.
+  pdf_engine: "auto"
+  # PDF tagging mode: content-preserving | overlay
+  # content-preserving wraps original visible content in BDC/EMC markers
+  #   (screen reader compatible, recommended)
+  # overlay creates invisible text layer (legacy, fails screen readers)
+  tag_mode: "content-preserving"
+  # Broken-font (.notdef / NotDefSpecial) fallback: choose the embedded
+  # replacement font by glyph coverage of the page text instead of a
+  # hardcoded first-found font. Set false to restore the legacy DejaVuSans
+  # fallback. fallback_min_coverage is the coverage target a candidate must
+  # reach (1.0 = every glyph); lower it to return a fallback sooner at the
+  # cost of more uncovered (.notdef) glyphs.
+  coverage_aware_fallback: true
+  fallback_min_coverage: 1.0
+  # Write a <stem>_font_substitution.{json,md} diagnostic next to the tagged
+  # PDF recording which fonts were substituted and any missing glyphs.
+  font_substitution_report: true
+  # Block-order normalization: fix gross Docling reading-order displacements
+  # (a visually-top block emitted last on the page; end-appended orphan
+  # blocks) before tagging. Moves are capped and guarded — columnar, rotated,
+  # and scanned/overlay pages are never touched (a general geometric re-sort
+  # corrupts multi-column docs).
+  # Set false to restore the raw Docling order (kill switch).
+  normalize_block_order: true
+  # First-row TH fallback: when a table reaches the tagger with ZERO header
+  # flags (Docling + HTML remediation + header sync all found none), promote
+  # the first row to TH /Scope /Column — same promotion Acrobat's fix
+  # applies; clears Ally "TableHeaders". Fires only on >=2-row tables.
+  table_first_row_th_fallback: true
+  # Split text-only false-Figures (flowcharts Docling saw as one image)
+  # into per-block P elements instead of a single Div.  A bare
+  # Document>Div tree reads as untagged to Ally/screen readers.
+  split_reclassified_figures: true
+  # Generate remediation report
+  generate_report: true
+
+# UI settings
+ui:
+  # Maximum number of PDFs that can be uploaded in a single batch
+  max_upload_documents: 3
+  # Maximum file size per PDF in megabytes
+  max_file_size_mb: 25
+  max_pages: 300  # reject uploads with more pages than this
+
+# Branding — everything an institution customizes. Empty strings fall back to
+# the defaults shown here; colors merge over the defaults key by key.
+branding:
+  product_name: "ReadReady"
+  header_title: "ReadReady"
+  organization: ""
+  logo: ""              # filename under static/branding/; empty = text-only header
+  logo_alt: ""
+  colors:
+    primary: "#1f2937"
+    primary_dark: "#111827"
+    accent: "#2563eb"
+    neutral: "#9ca3af"
+    warm_bg: "#f8fafc"
+  landing_page: ""      # optional landing-page override; empty = none
+
+# Content Editor input limits — defense-in-depth caps on user-supplied
+# screen-reader text/alt/caption edits before they are written into the PDF.
+# These bound resource use; the edit values are already escaped on the way in
+# (json.dump -> iText PdfString) and HTML-escaped on the way back to the UI.
+editor:
+  # Max characters for an alt-text or caption edit (short by WCAG convention).
+  max_alt_length: 2000
+  # Max characters for a body-text edit (P, H1-H6, TD, etc. — can be long).
+  max_text_length: 50000
+  # Max number of element edits accepted in a single batch payload.
+  max_batch_edits: 5000
+  # Enable the Content Editor "Reading order" view (manual reading-order editor).
+  # When false the tab is hidden and reorder edits are ignored.
+  reading_order_enabled: true
+  # Allow editing table cell text in the Content Editor "Visual" view.
+  # When false, tables in the Visual view route to the Reading view instead.
+  visual_table_edit_enabled: true
+
+# Resource limits
+resources:
+  # JVM heap size for iText tagger subprocess.
+  # "auto" = detect from system RAM and batch_workers (recommended).
+  # Or set explicitly: "512m", "2g", "4g", etc.
+  java_heap: "auto"
+  # Max percentage of system RAM the pipeline may use (for auto-detection).
+  # Remainder is left for the OS, desktop, and other processes.
+  max_ram_percent: 75
+  # Estimated RAM per Python worker process (Docling models + pipeline).
+  # Used by auto-detection to budget memory across workers + JVM taggers.
+  python_worker_mb: 3000
+
+# Concurrency settings
+concurrency:
+  # Parallel PDFs in CLI batch mode (each worker loads Docling models ~2-3GB).
+  # Default 3; lower it on machines with less than 16GB RAM, raise it with more memory.
+  batch_workers: 3
+  # Concurrent tasks per Celery worker process
+  celery_concurrency: 2
+
+# Task queue settings (Celery + Redis — optional, for production multi-user)
+# The app falls back to synchronous processing if Redis is unavailable.
+queue:
+  redis_url: "redis://localhost:6379/0"
+  # Hard time limit per task in seconds (kills the worker)
+  task_time_limit: 600
+  # Soft time limit (raises SoftTimeLimitExceeded — allows graceful cleanup)
+  task_soft_time_limit: 540
+  # How long to keep task results in Redis (seconds)
+  result_expires: 3600
+  # Replace the prefork child after this many tasks so a large document's heap
+  # is released (default 1 in tasks/celery_app.py)
+  worker_max_tasks_per_child: 1

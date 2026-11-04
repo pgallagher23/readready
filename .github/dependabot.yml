@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule: { interval: weekly }
+    groups: { python: { patterns: ["*"] } }
+    ignore:
+      - dependency-name: "docling-parse"
+      - dependency-name: "docling-ibm-models"
+  - package-ecosystem: maven
+    directory: "/output_gen/itext_src"
+    schedule: { interval: weekly }
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly }

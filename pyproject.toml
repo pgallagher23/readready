@@ -1,0 +1,13 @@
+[project]
+name = "readready"
+version = "1.0.0"
+description = "PDF accessibility remediation: untagged PDF in, WCAG 2.1 AA tagged PDF out."
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,11 @@
+ReadReady — Copyright (C) 2026 Western Michigan University Libraries
+Licensed under the GNU Affero General Public License v3.0 or later.
+
+Third-party components (not bundled in this repository unless stated):
+- iText Core 9.5 — AGPL-3.0 — https://itextpdf.com  (built into output_gen/itext_tagger.jar)
+- PyMuPDF — AGPL-3.0 — https://pymupdf.readthedocs.io
+- Docling, docling-core, docling-parse, docling-ibm-models — MIT — https://github.com/docling-project
+- Gradio — Apache-2.0; WeasyPrint — BSD-3-Clause; pikepdf — MPL-2.0; pypdf — BSD-3-Clause
+- Tesseract OCR — Apache-2.0; poppler-utils — GPL-2.0-or-later
+- Fonts installed by the Dockerfile: Liberation (OFL-1.1), DejaVu (Bitstream Vera), TeX Gyre (GFL), URW base35 (AGPL-3.0), Noto (OFL-1.1)
+No proprietary fonts are distributed. See the Fonts section of README.md.

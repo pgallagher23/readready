@@ -1,0 +1,43 @@
+# Caddy reverse proxy configuration
+#
+# For local/HTTP-only:
+:80 {
+    request_body {
+        max_size 100MB
+    }
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        -Server
+    }
+    reverse_proxy app:7860
+}
+
+#enable the below to passthru Flower on port 8080. Will also need to update docker-compose.yaml
+# Flower — Celery monitoring dashboard on port 8080
+#:8080 {
+#    reverse_proxy flower:5555
+#}
+
+# For production with HTTPS, replace the :80 block above with:
+# your-domain.example.com {
+#     request_body {
+#         max_size 100MB
+#     }
+#     header {
+#         X-Content-Type-Options nosniff
+#         X-Frame-Options DENY
+#         Referrer-Policy no-referrer
+#         Strict-Transport-Security "max-age=31536000"
+#         -Server
+#     }
+#     reverse_proxy app:7860
+#     # Generate the hash with: caddy hash-password
+#     handle_path /flower/* {
+#         basic_auth {
+#             admin <paste-hash-from-caddy-hash-password>
+#         }
+#         reverse_proxy flower:5555
+#     }
+# }

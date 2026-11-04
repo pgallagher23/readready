@@ -1,0 +1,38 @@
+{
+  "include": [
+    "audit",
+    "converter",
+    "output_gen",
+    "remediate",
+    "vlm",
+    "utils",
+    "scripts",
+    "tests",
+    "tasks",
+    "app.py",
+    "main.py",
+    "pipeline_core.py"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/.venv",
+    "**/.git",
+    "**/node_modules",
+    "output_gen/itext_src",
+    "output",
+    "fonts",
+    "test_upgrade_output",
+    "docs",
+    "static",
+    "tests/full_pipeline_results",
+    "tests/sample_outputs"
+  ],
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.13",
+  "pythonPlatform": "Linux",
+  "typeCheckingMode": "basic",
+  "useLibraryCodeForTypes": true,
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": "none"
+}

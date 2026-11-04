@@ -1,0 +1,600 @@
+# PDF Accessibility Remediation Tips
+# ===================================
+# Each entry provides Acrobat Pro fix instructions for one or more issue types.
+# Steps use markdown formatting: **bold** for UI elements, `code` for tag names.
+# These are converted to HTML at load time by app.py.
+#
+# To add a new tip: copy an existing entry, update the keys and fields.
+# Keys must match the issue type strings from the audit system.
+
+entries:
+  # ── Alt text / Images ────────────────────────────────────────────────
+
+  - keys:
+      - missing-alt-text
+      - missing-alt
+      - empty-alt
+      - empty-alt-text
+      - generic-alt-text
+      - pdf-figures-missing-alt
+    display_name: Missing Alt Text on Images
+    fix_hint: Add alt text that describes the image content and purpose.
+    wcag_ref: "1.1.1"
+    wcag_name: Non-text Content (Level A)
+    acrobat_tool: Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI)"
+      - "Locate the `<Figure>` tag for the image (use **Find Tag from Selection** or expand the tag tree)"
+      - "Right-click the tag → **Properties**"
+      - "In the Object Properties dialog, enter descriptive alt text in the **Alternate Text** field"
+      - "Click **Close** to save"
+
+  - keys:
+      - decorative-alt
+    display_name: Decorative Image Not Marked as Artifact
+    fix_hint: Verify this image is purely decorative and conveys no information.
+    wcag_ref: "1.1.1"
+    wcag_name: Non-text Content (Level A)
+    acrobat_tool: Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI)"
+      - "Locate the `<Figure>` tag for the decorative image"
+      - "Right-click the tag → **Change Tag to Artifact**"
+      - "This removes the image from the structure tree entirely, so screen readers will skip it"
+
+  - keys:
+      - figure-no-caption
+      - missing-figure-caption
+      - empty-figure-caption
+    display_name: Figure Missing Caption
+    fix_hint: Add a caption that summarizes the figure content.
+    wcag_ref: "1.1.1"
+    wcag_name: Non-text Content (Level A)
+    acrobat_tool: Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI) and locate the `<Figure>` tag"
+      - "Right-click the Figure tag → **New Tag** → select **Caption** from the Type dropdown"
+      - "If caption text already exists nearby in the tag tree, drag it into the new Caption tag"
+      - "If no caption text exists: click the Caption tag, then use the Reading Order tool to select text on the page and assign it to this tag"
+      - "Ensure the Caption tag is a child of (nested inside) the Figure tag"
+
+  # ── Color Contrast ──────────────────────────────────────────────────
+
+  - keys:
+      - insufficient-color-contrast
+    display_name: Insufficient Color Contrast
+    fix_hint: "Text does not meet minimum contrast ratio — adjust colors in the source document."
+    wcag_ref: "1.4.3"
+    wcag_name: Contrast Minimum (Level AA)
+    acrobat_tool: Source Document
+    requires_source_edit: true
+    acrobat_steps:
+      - "Color contrast **cannot be reliably fixed in Acrobat Pro alone** — edit the source document (Word, InDesign, etc.)"
+      - "Identify the affected text and its foreground/background colors (see swatches below)"
+      - "Change text or background colors to meet minimum contrast: **4.5:1** for normal text, **3:1** for large text (18pt+ or 14pt+ bold)"
+      - "Re-export to PDF after making changes"
+      - "Verify with an external contrast checker (e.g., WebAIM Contrast Checker or Colour Contrast Analyser)"
+
+  # ── Headings ────────────────────────────────────────────────────────
+
+  - keys:
+      - heading-skip
+      - skipped-heading-level
+    display_name: Heading Levels Skipped
+    fix_hint: "Use sequential heading levels without skipping (H1→H2→H3)."
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Tags Panel / Reading Order Tool
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI)"
+      - "Find the heading tags (H1, H2, H3, etc.) in the tag tree"
+      - "Right-click the incorrectly-leveled heading → **Properties**"
+      - "Change the **Type** to the correct heading level (e.g., H3 → H2)"
+      - "Ensure headings follow sequential order: H1 → H2 → H3 (no gaps)"
+
+  - keys:
+      - no-h1
+      - missing-h1
+      - no-headings
+    display_name: Missing Top-Level Heading (H1)
+    fix_hint: Add a top-level H1 heading to identify the document's main topic.
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Tags Panel / Reading Order Tool
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the **Reading Order** tool: **All tools → Prepare for accessibility → Reading Order** (new UI) or **Tools → Accessibility → Reading Order** (classic UI)"
+      - "Select the document title text on the first page"
+      - "Click the **Heading 1** button in the Reading Order dialog"
+      - "Alternatively, in the Tags panel: find the title's tag → right-click → Properties → change Type to **H1**"
+
+  - keys:
+      - duplicate-h1
+    display_name: Multiple H1 Headings
+    fix_hint: Use only one H1 per document to establish a clear hierarchy.
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel and search for all **H1** tags"
+      - "Keep only the primary document title as H1"
+      - "Right-click each extra H1 → **Properties** → change Type to **H2** (or appropriate level)"
+
+  # ── Tables ──────────────────────────────────────────────────────────
+
+  - keys:
+      - table-missing-headers
+      - table-no-caption
+      - table-missing-caption
+      - table-missing-summary
+    display_name: Table Structure Issues
+    fix_hint: Mark header cells as TH structure elements and set their Scope attribute.
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Table Editor (Tags Panel)
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI) and locate the `<Table>` tag"
+      - "Right-click the Table tag → **Table Editor** (shortcut: **Q**)"
+      - "In the Table Editor, click header cells and set them as **Header Cell** (TH)"
+      - "Set the **Scope** for each header: Row, Column, or Both"
+      - "To add a caption: right-click the Table tag → **New Tag** → **Caption** → type the caption text"
+      - "Click outside the table editor to save changes"
+
+  - keys:
+      - table-irregular-headers
+      - table-irregular-columns
+      - table-missing-headers-id
+      - table-missing-scope
+      - table-missing-thead
+      - table-missing-tbody
+    display_name: Table Header Structure Issues
+    fix_hint: Fix header cell scope, grouping, and associations in the table structure.
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Table Editor (Tags Panel)
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI) and locate the `<Table>` tag"
+      - "Right-click the Table tag → **Table Editor** (shortcut: **Q**)"
+      - "Review each header cell: click it and verify it is marked as **Header Cell** (TH), not Data Cell (TD)"
+      - "Set the **Scope** attribute on every header cell: **Column** for column headers, **Row** for row headers, **Both** for corner cells that serve both roles"
+      - "For complex tables with merged cells: right-click each data cell → **Cell Properties** → add the IDs of its associated header cells in the **Associated Headers** field"
+      - "If rows have inconsistent column counts (irregular columns): check for missing cells or incorrect colspan/rowspan values — you may need to rebuild the table in the source document"
+      - "Click outside the table editor to save changes, then run **Check for Accessibility** to verify"
+
+  # ── Formulas ────────────────────────────────────────────────────────
+
+  - keys:
+      - formula-missing-alt-text
+      - formula-generic-alt-text
+      - formula-missing-description
+    display_name: Formula Missing Description
+    fix_hint: Add a text description of the formula so screen readers can convey its meaning.
+    wcag_ref: "1.1.1"
+    wcag_name: Non-text Content (Level A)
+    acrobat_tool: Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI)"
+      - "Locate the `<Formula>` tag (or `<Figure>` tag containing the equation)"
+      - "Right-click the tag → **Properties**"
+      - "In the **Alternate Text** field, enter a full text description of the formula (e.g., 'E equals m times c squared' not just 'equation')"
+      - "For complex formulas, describe both the structure and meaning: what the variables represent and what the formula calculates"
+      - "Click **Close** to save"
+
+  # ── Heading Content ─────────────────────────────────────────────────
+
+  - keys:
+      - empty-heading
+      - generic-heading
+    display_name: Empty or Generic Heading
+    fix_hint: Replace empty or generic heading text with a descriptive label for the section.
+    wcag_ref: "2.4.6"
+    wcag_name: Headings and Labels (Level AA)
+    acrobat_tool: Tags Panel / Content Editing
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI)"
+      - "Locate the empty or generic heading tag (H1–H6) in the tag tree"
+      - "If the heading is empty: use **Edit PDF** tool to add visible heading text on the page, then assign it to this heading tag"
+      - "If the heading has generic text ('Heading', 'Title'): edit the text on the page to describe the section's actual content"
+      - "Alternatively, if the heading tag is truly unnecessary, right-click → **Delete Tag** (or change it to `<P>` if the text should remain as a paragraph)"
+
+  # ── Document Properties ─────────────────────────────────────────────
+
+  - keys:
+      - missing-document-language
+      - invalid-document-language
+      - pdf-no-document-lang
+    display_name: Missing or Invalid Document Language
+    fix_hint: Set the document language in File → Properties → Advanced → Reading Options.
+    wcag_ref: "3.1.1"
+    wcag_name: Language of Page (Level A)
+    acrobat_tool: Document Properties
+    requires_source_edit: false
+    acrobat_steps:
+      - "Go to **File → Properties** (or Ctrl+D)"
+      - "Click the **Advanced** tab"
+      - "In the **Reading Options** section, set the **Language** dropdown to the correct language (e.g., English)"
+      - "Click **OK** to save"
+
+  - keys:
+      - missing-document-title
+      - missing-title
+      - empty-title
+      - generic-title
+    display_name: Missing Document Title
+    fix_hint: "Set a descriptive document title in File → Properties → Description."
+    wcag_ref: "2.4.2"
+    wcag_name: Page Titled (Level A)
+    acrobat_tool: Document Properties
+    requires_source_edit: false
+    acrobat_steps:
+      - "Go to **File → Properties** (or Ctrl+D)"
+      - "Click the **Description** tab"
+      - "Enter a descriptive title in the **Title** field"
+      - "Click the **Initial View** tab → set **Show** to **Document Title**"
+      - "Click **OK** to save"
+
+  # ── Links ───────────────────────────────────────────────────────────
+
+  - keys:
+      - empty-link
+      - empty-link-text
+      - ambiguous-link
+      - generic-link-text
+      - url-as-link-text
+      - duplicate-link-text-different-url
+    display_name: Link Text Issues
+    fix_hint: Add descriptive text to the link so users know where it leads.
+    wcag_ref: "2.4.4"
+    wcag_name: Link Purpose (Level A)
+    acrobat_tool: Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI) and locate the `<Link>` tag"
+      - "Right-click the Link tag → **Properties**"
+      - "In the **Alternate Text** field, enter a description of the link destination"
+      - "For empty links: ensure the Link contains visible text content (may need to edit the Span child)"
+      - "For ambiguous links ('click here'): update the link text or alt text to describe the destination"
+
+  # ── Forms ───────────────────────────────────────────────────────────
+
+  - keys:
+      - missing-label
+      - missing-form-instructions
+    display_name: Form Field Labels Missing
+    fix_hint: Add a descriptive Tooltip to each form field so screen readers can identify it.
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Prepare Form Tool
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open **All tools → Prepare a form** (new UI) or **Tools → Prepare Form** (classic UI)"
+      - "Select the unlabeled form field"
+      - "Right-click → **Properties**"
+      - "In the **General** tab, enter a descriptive **Tooltip** (this becomes the accessible name)"
+      - "In the **General** tab, verify the **Name** field is descriptive"
+      - "Click **Close** to save"
+
+  # ── PDF Structure ───────────────────────────────────────────────────
+
+  - keys:
+      - pdf-no-structure-tree
+      - pdf-not-marked
+    display_name: PDF Not Tagged / No Structure Tree
+    fix_hint: "The PDF has no structure tree — it needs to be re-tagged."
+    wcag_ref: "4.1.2"
+    wcag_name: Name, Role, Value (Level A)
+    acrobat_tool: Make Accessible Wizard
+    requires_source_edit: false
+    acrobat_steps:
+      - "Go to **All tools → Use Guided Action → Make Accessible** (new UI) or **Tools → Action Wizard → Make Accessible** (classic UI)"
+      - "Follow the wizard prompts to auto-tag the document"
+      - "After auto-tagging, review the Tags panel for accuracy"
+      - "Use the **Reading Order** tool to correct any mis-tagged elements"
+      - "Run **All tools → Prepare for accessibility → Check for Accessibility** (new UI) or **Tools → Accessibility → Full Check** (classic UI) to verify the result"
+
+  - keys:
+      - pdf-hollow-pages
+    display_name: Hollow Pages (Scanned/Image-Only)
+    fix_hint: These pages have visual content but no tagged text for screen readers.
+    wcag_ref: "1.1.1"
+    wcag_name: Non-text Content (Level A)
+    acrobat_tool: Scan & OCR
+    requires_source_edit: false
+    acrobat_steps:
+      - "Go to **All tools → Scan & OCR** (new UI) or **Tools → Scan & OCR** (classic UI)"
+      - "Click **Recognize Text → In This File**"
+      - "Select page range (or All Pages) and choose language"
+      - "Set **Output** to **Searchable Image** for best results"
+      - "Click **Recognize Text** and wait for processing"
+      - "After OCR, run the **Make Accessible** guided action or **Autotag document** under the accessibility tools to tag the recognized text"
+
+  - keys:
+      - pdf-blank-structure-elements
+      - pdf-blank-subtrees
+    display_name: Empty Structure Elements
+    fix_hint: Remove or populate empty structure elements in the tag tree.
+    wcag_ref: "4.1.2"
+    wcag_name: Name, Role, Value (Level A)
+    acrobat_tool: Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI)"
+      - "Locate empty tags (they will have no content when expanded)"
+      - "Right-click the empty tag → **Delete Tag**"
+      - "If the tag should have content, drag the appropriate content into it from nearby tags"
+
+  # ── Landmarks / Navigation ──────────────────────────────────────────
+
+  - keys:
+      - missing-main-landmark
+    display_name: Missing Main Content Grouping
+    fix_hint: "Group the primary body content under a `Part` or `Sect` structure element, separate from headers and footers."
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI)"
+      - "Identify recurring header/footer content and right-click each → **Change Tag to Artifact** (so screen readers skip them)"
+      - "Select the primary body content tags"
+      - "Right-click → **New Tag** → choose **Part** or **Sect** as the tag type"
+      - "Drag the body content tags into the new grouping tag"
+      - "This gives screen readers a clear separation between body content and repeated page elements"
+
+  - keys:
+      - missing-skip-link
+    display_name: Missing Navigation Aids (Bypass Blocks)
+    fix_hint: "Add bookmarks and a proper heading structure so screen reader users can navigate quickly past repeated content."
+    wcag_ref: "2.4.1"
+    wcag_name: Bypass Blocks (Level A)
+    acrobat_tool: Bookmarks Panel + Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "In PDF, the equivalent of 'skip navigation' is proper heading structure and bookmarks — screen readers use these to jump between sections"
+      - "Open the **Bookmarks** panel (left sidebar) and verify that key sections have bookmarks"
+      - "If bookmarks are missing: navigate to each section heading, select the text, then **Ctrl+B** (or right-click in Bookmarks panel → **New Bookmark**)"
+      - "Ensure the tag tree has correct heading levels (H1, H2, H3) so screen readers can navigate by heading"
+      - "Mark repeated page headers/footers as **Artifact** so screen readers skip them automatically"
+
+  # ── Screen reader quality / text coverage ───────────────────────────
+
+  - keys:
+      - pdf-low-text-coverage
+    display_name: Low Text Coverage
+    fix_hint: "Many pages have little or no tagged text — the output PDF may be mostly blank to a screen reader. The images above show the tagged areas, and in many cases the missing parts are only headers, footers, page numbers, etc. If so, the document is likely acceptable, but always confirm to be sure."
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Reading Order
+    requires_source_edit: false
+    acrobat_steps:
+      - "Check the output in the **matching window below** (the Before / After text preview). Look for pages where the tagged text is blank or much shorter than the original."
+      - "If blank areas are detected, open the output PDF in **Acrobat Pro**"
+      - "Navigate to a blank/missing-text page"
+      - "Open the Reading Order tool: **All tools → Prepare for accessibility → Reading Order** (new UI) or **Tools → Accessibility → Reading Order** (classic UI)"
+      - "Acrobat will overlay numbered regions on the page. Blank areas that should contain text will appear un-highlighted."
+      - "Draw a rectangle around the missing text area and click the appropriate tag type (e.g. **Text/Paragraph**, **Heading**, **Table**)"
+      - "Repeat for each page with missing text"
+      - "Run **Check for Accessibility** (new UI) or **Full Check** (classic UI) under the accessibility tools to verify the new tags are correct"
+
+  - keys:
+      - pdf-moderate-text-coverage
+    display_name: Moderate Text Coverage
+    fix_hint: "Some pages have reduced text extraction — spot-check screen reader output."
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Reading Order
+    requires_source_edit: false
+    acrobat_steps:
+      - "Check the output in the **matching window below** (the Before / After text preview). Look for pages where the tagged text is noticeably shorter than the original."
+      - "If blank or sparse areas are detected, open the output PDF in **Acrobat Pro**"
+      - "Navigate to affected pages"
+      - "Open the Reading Order tool: **All tools → Prepare for accessibility → Reading Order** (new UI) or **Tools → Accessibility → Reading Order** (classic UI)"
+      - "Draw a rectangle around any missing text area and assign the correct tag type (e.g. **Text/Paragraph**, **Heading**)"
+      - "Run **Check for Accessibility** (new UI) or **Full Check** (classic UI) under the accessibility tools to verify"
+
+  - keys:
+      - pdf-reading-order
+    display_name: Reading Order May Not Match Visual Layout
+    fix_hint: "On the flagged pages, the order a screen reader reads the tags does not closely track the visible column-aware layout. This is a detection signal, not a definitive failure — the automatic check compares two order estimates and cannot judge intent. Open the page in a screen reader and confirm content is announced in a sensible order; correct only if it genuinely reads out of order."
+    wcag_ref: "1.3.2"
+    wcag_name: Meaningful Sequence (Level A)
+    acrobat_tool: Reading Order
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the output PDF in **Acrobat Pro** and go to a flagged page"
+      - "Use **Read Out Loud** (View → Read Out Loud → Activate, then Read This Page) and listen for content announced out of order — e.g. a sidebar interrupting a paragraph, or columns read across instead of down"
+      - "If it reads sensibly, no change is needed (the detector can disagree with a correct multi-column order)"
+      - "If it genuinely reads out of order, open the **Tags** panel (All tools → Prepare for accessibility → Tags / classic: Tools → Accessibility → Reading Order)"
+      - "Drag the structure elements in the Tags tree into the correct reading sequence, or use the **Reading Order** tool to re-number regions on the page"
+      - "Run **Check for Accessibility** to confirm the structure is still valid after reordering"
+
+  - keys:
+      - pdf-poor-screen-reader-quality
+    display_name: Poor Screen Reader Quality
+    fix_hint: "Screen reader quality is poor — manual verification strongly recommended. In some cases the text is fully readable and the detection is in error. Review all documents to ensure correct coverage."
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Reading Order
+    requires_source_edit: false
+    acrobat_steps:
+      - "Check the output in the **matching window below** (the Before / After text preview). Compare the tagged text against the original — look for garbled text, missing sections, or blank pages."
+      - "If significant gaps are found, open the output PDF in **Acrobat Pro**"
+      - "Open the Reading Order tool: **All tools → Prepare for accessibility → Reading Order** (new UI) or **Tools → Accessibility → Reading Order** (classic UI)"
+      - "Review each page. Where text areas are missing from the tag structure, draw a rectangle around the content and click the appropriate tag type (e.g. **Text/Paragraph**, **Heading**, **Table**)"
+      - "For garbled text: check if the source PDF uses unusual fonts (Type 3, custom encodings). You may need to re-export from the original source document."
+      - "Run **Check for Accessibility** (new UI) or **Full Check** (classic UI) under the accessibility tools and fix remaining issues"
+
+  - keys:
+      - pdf-fair-screen-reader-quality
+    display_name: Fair Screen Reader Quality
+    fix_hint: "Screen reader quality is fair — manual verification recommended."
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Reading Order
+    requires_source_edit: false
+    acrobat_steps:
+      - "Check the output in the **matching window below** (the Before / After text preview). Look for pages where the tagged text is missing content or reads incorrectly."
+      - "If blank areas are detected, open the output PDF in **Acrobat Pro**"
+      - "Open the Reading Order tool: **All tools → Prepare for accessibility → Reading Order** (new UI) or **Tools → Accessibility → Reading Order** (classic UI)"
+      - "Draw a rectangle around any missing text area and assign the correct tag type"
+      - "Run **Check for Accessibility** (new UI) or **Full Check** (classic UI) under the accessibility tools to verify"
+
+  - keys:
+      - pdf-poor-ocr-quality
+    display_name: Garbled OCR Text
+    fix_hint: "Some scanned pages OCR'd as garbled text — re-OCR in Acrobat or edit recognized text."
+    wcag_ref: "1.1.1"
+    wcag_name: Non-text Content (Level A)
+    acrobat_tool: Recognize Text
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the output PDF in **Acrobat Pro**"
+      - "Go to **All tools → Scan & OCR → Recognize Text → In This File** (new UI) or **Tools → Scan & OCR → Recognize Text → In This File** (classic UI)"
+      - "If the affected pages have rotated or vertically-oriented text, set **Document Language** correctly and enable orientation auto-detect"
+      - "After OCR, use **Edit OCR text** (under the same Scan & OCR panel) to manually fix any remaining errors on the affected pages"
+      - "Run **Check for Accessibility** to verify the structure tree now contains readable text"
+
+  # ── Source quality ──────────────────────────────────────────────────
+
+  - keys:
+      - scrambled-type3-font
+    display_name: Scrambled Type 3 Font Encoding
+    fix_hint: "Source PDF uses a Type 3 font with opaque custom encoding — automated text extraction produces gibberish. Tag this document manually in Acrobat Pro instead."
+    wcag_ref: "1.3.1"
+    wcag_name: Info and Relationships (Level A)
+    acrobat_tool: Accessibility
+    requires_source_edit: false
+    acrobat_steps:
+      - "This PDF contains a Type 3 font whose character encoding cannot be decoded by automated tools. The visible glyphs render correctly, but there is no mapping from character codes to Unicode — so all extracted text is gibberish."
+      - "**Recommended: Tag in Acrobat Pro.** Acrobat's built-in tagger uses the rendered glyph shapes (not the encoding) and can produce correct tags and reading order even for Type 3 fonts."
+      - "Open the PDF in Acrobat Pro and run **All tools → Prepare for accessibility → Autotag document** (new UI) or **Tools → Accessibility → Autotag Document** (classic UI)"
+      - "Review the tag tree: **View → Show/Hide → Navigation Panes → Tags**"
+      - "Run **All tools → Prepare for accessibility → Check for Accessibility** (new UI) or **Tools → Accessibility → Full Check** (classic UI) to verify compliance"
+      - "Fix any remaining issues flagged by the checker (reading order, alt text, table headers, etc.)"
+      - "**Alternative:** If you have the original source document (Word, InDesign, etc.), re-export as PDF using standard fonts (e.g. Arial, Times New Roman) and re-run this pipeline."
+
+  # ── Pipeline warnings (shown in Improvement Guide) ──────────────────
+
+  - keys:
+      - pipeline-document-limits
+    display_name: Document Processing Limits Reached
+    fix_hint: Some images, tables, or formulas exceeded the automated processing limit and were not given AI-generated descriptions.
+    acrobat_tool: Tags Panel
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the Tags panel (**View → Show/Hide → Navigation Panes → Tags** in classic UI, or **View → Show/Hide → Side panels → Accessibility tags** in new UI)"
+      - "Search for `<Figure>` tags that have empty or missing **Alternate Text** — right-click → **Properties** and add a description"
+      - "For tables without captions, locate the `<Table>` tag and add a `<Caption>` child tag with summary text"
+      - "For formulas, locate the `<Formula>` tag, right-click → **Properties**, and add alt text describing the equation"
+
+  - keys:
+      - pipeline-output-quality
+    display_name: PDF Output Quality Issues
+    fix_hint: The tagged PDF was generated using a fallback method and may have layout differences or reduced screen reader support.
+    acrobat_tool: Accessibility Checker
+    requires_source_edit: false
+    acrobat_steps:
+      - "Open the output PDF in Acrobat Pro and run **All tools → Prepare for accessibility → Check for Accessibility** (new UI) or **Tools → Accessibility → Full Check** (classic UI) to identify any remaining issues"
+      - "Use **Read Out Loud** (**View → Read Out Loud → Read This Page Only**) to verify that screen readers can access the content"
+      - "If pages appear blank or content is missing, try re-processing the source PDF, or use the accessible HTML version instead"
+
+  - keys:
+      - pipeline-font-issues
+    display_name: Font Compatibility Issues
+    fix_hint: The source PDF has fonts that could not be matched exactly — substitution fonts were used, which may cause rendering problems in Adobe Acrobat.
+    acrobat_tool: Preflight / Print Production
+    requires_source_edit: false
+    acrobat_steps:
+      - "**Option 1 — Use the accessible HTML version** instead of the PDF, which avoids font issues entirely"
+      - "**Option 2 — Reprint from source:** If you have access to the original document (Word, InDesign, etc.), re-export to PDF using **Save As → PDF** with fonts embedded, then re-process"
+      - "**Option 3 — Fix in Acrobat Pro:** Open the PDF, go to **Edit → Preflight → PDF Fixups → Embed missing fonts** and run the fixup. Then re-run the accessibility pipeline on the fixed PDF"
+      - "Font issues are a property of the source PDF and cannot be fully resolved by automated processing alone"
+
+
+# ── Fallback display names ────────────────────────────────────────────
+# For issue types that don't have a full remediation entry above.
+# These appear in the verdict banner and aggregated issue lists.
+
+display_names:
+  pdf-no-structure-tree: No Structure Tree
+  pdf-not-marked: PDF Not Marked as Tagged
+  pdf-no-document-lang: No Document Language Set
+  pdf-hollow-pages: "Hollow Pages (No Tagged Text)"
+  pdf-figures-missing-alt: Figures Missing Alt Text
+  pdf-blank-structure-elements: Empty Structure Elements
+  pdf-blank-subtrees: Empty Structure Subtrees
+  pdf-fair-screen-reader-quality: Fair Screen Reader Quality
+  pdf-poor-screen-reader-quality: Poor Screen Reader Quality
+  pdf-poor-ocr-quality: Garbled OCR Text
+  table-irregular-headers: Irregular Table Header Structure
+  table-irregular-columns: Inconsistent Table Column Counts
+  table-missing-scope: Table Headers Missing Scope
+  table-missing-thead: Table Missing Header Group
+  table-missing-tbody: Table Missing Body Group
+  table-missing-headers-id: Complex Table Missing Header Associations
+  formula-missing-alt-text: Formula Missing Alt Text
+  formula-generic-alt-text: Formula Has Generic Alt Text
+  formula-missing-description: Formula Missing Description
+  empty-heading: Empty Heading
+  generic-heading: Generic Heading Text
+  empty-title: Empty Document Title
+  generic-title: Generic Document Title
+  generic-alt-text: Generic Image Alt Text
+  empty-alt-text: Empty Image Alt Text
+  url-as-link-text: URL Used as Link Text
+  duplicate-link-text-different-url: Duplicate Link Text Different URLs
+  empty-figure-caption: Empty Figure Caption
+  no-headings: No Headings in Document
+
+# ── Fallback fix hints ────────────────────────────────────────────────
+# Brief one-line hints for issue types not covered by a full entry above,
+# or overrides for specific keys within a multi-key entry.
+
+fix_hints:
+  invalid-document-language: "Use a valid BCP 47 language tag (e.g., 'en', 'es', 'fr')."
+  missing-form-instructions: Add clear instructions for completing the form.
+  pdf-not-marked: Set /MarkInfo.Marked to true in the PDF catalog.
+  pdf-no-document-lang: Set the /Lang entry in the PDF document catalog.
+  pdf-figures-missing-alt: Add /Alt entries to Figure structure elements in the PDF.
+  pdf-blank-subtrees: Remove empty subtrees from the structure tree.
+  ambiguous-link: "Replace generic text ('click here', 'read more') with a descriptive label."
+  table-no-caption: "Add a caption describing the table's purpose."
+  table-missing-caption: "Add a caption describing the table's purpose."
+  table-missing-summary: Add a summary attribute or caption for complex tables.
+  # Table header structure
+  table-irregular-headers: "Table has inconsistent header cells — mark all header cells as TH with correct scope."
+  table-irregular-columns: "Table rows have inconsistent column counts — check for missing cells or incorrect colspan values."
+  table-missing-headers-id: "Complex table cells are not associated with their headers — add headers/id attributes."
+  table-missing-scope: "Table header cells are missing scope attributes — set scope to Row, Column, or Both."
+  table-missing-thead: "Table header rows should be grouped in a thead element."
+  table-missing-tbody: "Table data rows should be grouped in a tbody element."
+  # Formula descriptions
+  formula-missing-alt-text: "Formula has no text description — add alt text that describes the formula."
+  formula-generic-alt-text: "Formula has a generic placeholder description — replace with specific content."
+  formula-missing-description: "Formula has MathML markup but no text fallback — add an alttext or aria-label."
+  # Alt text variants
+  generic-alt-text: "Replace generic alt text ('image', 'photo') with a description of the image content."
+  empty-alt-text: "Image has empty alt text but is not decorative — add a meaningful description."
+  # Title variants
+  empty-title: "The document title is empty — enter a descriptive title."
+  generic-title: "Replace the generic title with a specific, descriptive document title."
+  missing-title: "Set a descriptive document title in File → Properties → Description."
+  # Heading variants
+  empty-heading: "Heading element has no text — add descriptive text or remove the empty heading."
+  generic-heading: "Heading uses placeholder text — replace with a meaningful section label."
+  no-headings: "Document has no headings — add at least an H1 and H2s for sections."
+  # Link variants
+  url-as-link-text: "Replace the raw URL with descriptive text that explains the link destination."
+  duplicate-link-text-different-url: "Links with the same text go to different destinations — make each link text unique."
+  # Figure caption variants
+  empty-figure-caption: "The figure has a caption element but it is empty — add descriptive caption text."
+  missing-figure-caption: "Add a caption that summarizes the figure content."

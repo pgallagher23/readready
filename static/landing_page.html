@@ -1,0 +1,22 @@
+<!--
+  Generic landing page for ReadReady. Shown in the results panel before any
+  files are processed. Institutions can replace it by setting
+  `branding.landing_page` in config.yaml (see static/branding/README.md).
+  Inline styles only (Gradio may strip style and script tags); rendered as a
+  fragment under the page <h1>, so headings start at <h2>.
+-->
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; box-sizing: border-box; padding: 0 4px 16px;">
+
+  <h2 style="font-size: 1.25rem; font-weight: bold; color: #1f2937; margin: 0 0 6px;">Make a PDF accessible</h2>
+  <p style="font-size: 0.875rem; color: #444; line-height: 1.6; margin: 0 0 16px;">Turn untagged PDFs into <a href="https://www.w3.org/TR/WCAG21/#background-on-wcag-2" target="_blank" rel="noopener" style="color: #1e40af; text-decoration: underline;"><abbr title="Web Content Accessibility Guidelines">WCAG</abbr> 2.1 AA</a> compliant accessible documents. The original page layout stays intact, while an added structure layer lets screen readers navigate by headings, tables, and links and hear descriptions of images.</p>
+
+  <h3 style="font-size: 1rem; font-weight: bold; color: #1f2937; margin: 0 0 4px;">1. Upload</h3>
+  <p style="font-size: 0.875rem; color: #444; line-height: 1.6; margin: 0 0 12px;">Choose one or more PDF files. Text-based and scanned documents are both supported; scanned pages are read with optical character recognition.</p>
+
+  <h3 style="font-size: 1rem; font-weight: bold; color: #1f2937; margin: 0 0 4px;">2. Review</h3>
+  <p style="font-size: 0.875rem; color: #444; line-height: 1.6; margin: 0 0 12px;">When processing finishes, the results panel lists what was fixed and what still needs a person: image descriptions, heading levels, reading order, and table structure can all be checked and edited.</p>
+
+  <h3 style="font-size: 1rem; font-weight: bold; color: #1f2937; margin: 0 0 4px;">3. Download</h3>
+  <p style="font-size: 0.875rem; color: #444; line-height: 1.6; margin: 0 0 12px;">Download the tagged accessible PDF together with an accessibility report. Automated checks are not a substitute for testing with assistive technology, so review the report before you publish.</p>
+
+</div>
