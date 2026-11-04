@@ -20,7 +20,7 @@ jobs:
         with: { python-version: "${{ matrix.python }}", cache: pip }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "17" }
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: { name: itext-tagger, path: output_gen/ }
       - run: mv output_gen/itext-tagger-1.0.0.jar output_gen/itext_tagger.jar && java -version
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 libcairo2 poppler-utils tesseract-ocr fonts-dejavu-core fonts-liberation fonts-noto-core
