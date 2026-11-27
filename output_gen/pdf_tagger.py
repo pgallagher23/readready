@@ -347,25 +347,42 @@ def _merge_remediation_into_structure(
         alt_texts = remediation_data.get("alt_texts", {})
         modified = False
 
+        merged_path = structure_json_path
         if alt_texts:
+            new_elements = []
             for elem in structure.get("elements", []):
                 image_ref = elem.get("image_ref")
                 if image_ref and elem.get("tag") == "Figure":
-                    # Try matching by full path or just filename
                     ref_name = Path(image_ref).name
+                    matched_alt = None
                     for key, alt in alt_texts.items():
                         if key == image_ref or Path(key).name == ref_name:
-                            elem["alt_text"] = alt
-                            modified = True
+                            matched_alt = alt
                             break
+                    if matched_alt is not None:
+                        if not (matched_alt or "").strip():
+                            # Decorative: omit from structure tree so iText wraps it as an Artifact
+                            modified = True
+                            continue
+                        elem["alt_text"] = matched_alt
+                        elem["tag"] = "Figure"
+                        modified = True
+                new_elements.append(elem)
+
+            if modified:
+                structure["elements"] = new_elements
 
         if modified:
-            with open(structure_json_path, "w", encoding="utf-8") as f:
+            merged_path = str(Path(structure_json_path).with_name(
+                Path(structure_json_path).stem + "_merged.json"
+            ))
+            with open(merged_path, "w", encoding="utf-8") as f:
                 json.dump(structure, f, indent=2, ensure_ascii=False)
             logger.info(
                 f"Merged {sum(1 for e in structure['elements'] if e.get('alt_text'))} "
-                f"alt texts into structure JSON"
+                f"alt texts into structure JSON ({merged_path})"
             )
+            return merged_path
 
     except Exception as e:
         logger.warning(f"Failed to merge remediation data: {e}")

@@ -1,9 +1,14 @@
 # ReadReady configuration
 
 # VLM settings
-# provider: "ollama" for local Ollama, "openai" for OpenRouter/OpenAI-compatible
+# provider: "ollama" for local Ollama, "openai" for OpenAI-compatible (including Gemini)
 llm:
-  provider: "ollama"
+  provider: "openai"
+  openai_base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  openai_model: "gemini-3.1-flash-lite"
+  openai_text_model: "gemini-3.1-flash-lite"
+
+
 
   # -- Ollama settings (used when provider: "ollama") --
   base_url: "http://localhost:11434"
@@ -22,10 +27,10 @@ llm:
   anthropic_model: "claude-haiku-4-5-20251001"
   anthropic_text_model: "claude-haiku-4-5-20251001"  # text-only tasks (table structure)
 
-  # -- OpenAI-compatible settings (used when provider: "openai") --
-  openai_base_url: "https://openrouter.ai/api/v1"
-  openai_model: "google/gemini-2.0-flash-001"
-  openai_text_model: "google/gemini-2.0-flash-001"   # text-only tasks (table structure)
+  # -- OpenAI-compatible settings (commented out to prevent overriding Gemini above) --
+  # openai_base_url: "https://openrouter.ai/api/v1"
+  # openai_model: "google/gemini-2.0-flash-001"
+  # openai_text_model: "google/gemini-2.0-flash-001"
 
   # -- Shared settings --
   api_key: ""           # Set via env var: ANTHROPIC_API_KEY or OPENROUTER_API_KEY
@@ -367,9 +372,9 @@ output:
 # UI settings
 ui:
   # Maximum number of PDFs that can be uploaded in a single batch
-  max_upload_documents: 3
+  max_upload_documents: 100
   # Maximum file size per PDF in megabytes
-  max_file_size_mb: 25
+  max_file_size_mb: 250
   max_pages: 300  # reject uploads with more pages than this
 
 # Branding — everything an institution customizes. Empty strings fall back to

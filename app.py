@@ -3721,6 +3721,172 @@ div.block:has(#custom-download-area:empty) {{
     margin-bottom: 10px;
 }}
 
+/* =============================================================================
+   Polly Alt Modal Styles
+   ============================================================================= */
+#polly-alt-modal-overlay {{
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.82);
+    z-index: 99999;
+}}
+#polly-alt-modal {{
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;
+    border-radius: 12px;
+    width: 80vw;
+    max-width: 900px;
+    max-height: 90vh;
+    z-index: 100000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}}
+.polly-modal-image-container {{
+    width: 100%;
+    background: #111827;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-height: 45vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+    border-bottom: 1px solid #374151;
+}}
+.polly-modal-image-container img {{
+    max-width: 100%;
+    max-height: 45vh;
+    object-fit: contain;
+    display: block;
+}}
+.polly-modal-header {{
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    flex-shrink: 0;
+}}
+.polly-modal-header h3 {{
+    margin: 0;
+    color: #1e3a8a;
+    font-size: 1.1rem;
+    font-weight: 700;
+}}
+.polly-modal-body {{
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+}}
+.polly-choice-item {{
+    position: relative;
+    margin-bottom: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fcfcfc;
+    transition: all 0.15s ease;
+}}
+.polly-choice-item:hover {{
+    border-color: #2563eb;
+    background: #ffffff;
+}}
+.polly-choice-select-btn {{
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-family: inherit;
+    color: inherit;
+    box-sizing: border-box;
+}}
+.polly-choice-tag {{
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    background: #dbeafe;
+    color: #1e40af;
+}}
+.polly-choice-tag.polly-tag-original {{
+    background: #f3f4f6;
+    color: #4b5563;
+}}
+.polly-choice-content {{
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #1f2937;
+    margin-bottom: 4px;
+}}
+.polly-choice-char-count {{
+    font-size: 0.75rem;
+    color: #6b7280;
+}}
+.polly-choice-char-count.over-limit {{
+    color: #b91c1c;
+    font-weight: 600;
+}}
+.polly-choice-explanation {{
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #f0fdf4;
+    border-left: 3px solid #16a34a;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: #166534;
+    line-height: 1.4;
+}}
+.polly-footer-btn {{
+    width: 100%;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid #d1d5db;
+    background: #f3f4f6;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+    margin-top: 8px;
+}}
+.polly-footer-btn:hover {{
+    background: #e5e7eb;
+}}
+.polly-tip-rotator {{
+    margin: 16px 0; 
+    padding: 14px 18px; 
+    background: #f0fdf4; 
+    border-left: 4px solid #16a34a;
+    border-radius: 6px; 
+    font-size: 0.875rem; 
+    color: #166534; 
+    line-height: 1.5;
+}}
+.polly-row-gen-btn {{
+    margin-top: 6px;
+    background: #f8fafc;
+    border: 1px solid #2563eb;
+    color: #2563eb;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}}
+.polly-row-gen-btn:hover {{
+    background: #eff6ff;
+}}
+
+
 """
 
 # ── Custom JS ─────────────────────────────────────────────────────────────────
@@ -4009,6 +4175,130 @@ APP_JS = r"""
             overlay.style.display = 'flex';
             overlay.focus();
         };
+
+        window._openPollyAltModal = function(btn) {
+            var imgSrc = btn.getAttribute('data-img-src') || '';
+            var targetKey = btn.getAttribute('data-target-key') || '';
+            var optionsRaw = btn.getAttribute('data-options') || '[]';
+            var currentAlt = '';
+
+            // Locate the corresponding textbox within this image row
+            var row = btn.closest('.row') || btn.closest('[id*="img-row"]');
+            var textarea = row ? row.querySelector('textarea') : null;
+            if (textarea) currentAlt = textarea.value.trim();
+
+            var options = [];
+            try {
+                options = JSON.parse(optionsRaw);
+            } catch (e) {
+                options = [];
+            }
+
+            document.getElementById('polly-alt-modal-overlay')?.remove();
+            document.getElementById('polly-alt-modal')?.remove();
+
+            var overlay = document.createElement('div');
+            overlay.id = 'polly-alt-modal-overlay';
+
+            var modal = document.createElement('div');
+            modal.id = 'polly-alt-modal';
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('aria-label', 'Polly Alt Options');
+
+            modal.innerHTML = 
+                '<div class="polly-modal-image-container">' +
+                '<img src="' + imgSrc + '" alt="Preview for description">' +
+                '</div>' +
+                '<div class="polly-modal-header">' +
+                '<h3>🦜 Polly Alt Choices</h3>' +
+                '</div>' +
+                '<div class="polly-modal-body"></div>';
+
+            var body = modal.querySelector('.polly-modal-body');
+
+            function dismiss() {
+                overlay.remove();
+                modal.remove();
+            }
+
+            overlay.onclick = dismiss;
+
+            var itemsToRender = [];
+            if (currentAlt) {
+                itemsToRender.push({
+                    alt: currentAlt,
+                    label: 'CURRENT',
+                    explanation: 'The description currently set for this image.'
+                });
+            }
+
+            options.forEach(function(opt) {
+                itemsToRender.push({
+                    alt: opt.alt || '',
+                    label: 'OPTION',
+                    focus: opt.focus || '',
+                    explanation: opt.explanation || ''
+                });
+            });
+
+            if (itemsToRender.length === 0) {
+                body.innerHTML = '<p style="color:#6b7280;font-size:0.875rem;">No alternate descriptions available for this image.</p>';
+            } else {
+                itemsToRender.forEach(function(opt) {
+                    var card = document.createElement('div');
+                    card.className = 'polly-choice-item';
+
+                    var selectBtn = document.createElement('button');
+                    selectBtn.type = 'button';
+                    selectBtn.className = 'polly-choice-select-btn';
+
+                    var tag = document.createElement('span');
+                    tag.className = 'polly-choice-tag ' + (opt.label === 'CURRENT' ? 'polly-tag-original' : '');
+                    tag.textContent = opt.focus ? (opt.label + ' • ' + opt.focus) : opt.label;
+
+                    var content = document.createElement('div');
+                    content.className = 'polly-choice-content';
+                    content.textContent = opt.alt;
+
+                    var counter = document.createElement('div');
+                    counter.className = 'polly-choice-char-count' + (opt.alt.length > 150 ? ' over-limit' : '');
+                    counter.textContent = opt.alt.length + ' characters';
+
+                    selectBtn.appendChild(tag);
+                    selectBtn.appendChild(content);
+                    selectBtn.appendChild(counter);
+
+                    if (opt.explanation) {
+                        var exp = document.createElement('div');
+                        exp.className = 'polly-choice-explanation';
+                        exp.textContent = opt.explanation;
+                        selectBtn.appendChild(exp);
+                    }
+
+                    selectBtn.onclick = function() {
+                        if (textarea) {
+                            setProgrammaticValue(textarea, opt.alt);
+                        }
+                        dismiss();
+                    };
+
+                    card.appendChild(selectBtn);
+                    body.appendChild(card);
+                });
+            }
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'polly-footer-btn';
+            cancelBtn.textContent = 'Keep Current & Close';
+            cancelBtn.onclick = dismiss;
+            body.appendChild(cancelBtn);
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(modal);
+        };
+
     })();
 
     // --- WCAG fix: lightbox keyboard accessibility (2.1.1) ---
@@ -4660,6 +4950,147 @@ APP_JS = r"""
             if (!splitDrag) return;
             splitDrag.sp.classList.remove('ro-splitting');
             splitDrag = null;
+        });
+    })();
+
+    // --- Polly Alt AI Review Modal ---
+    (function initPollyModal() {
+        var TIPS = [
+            'Keep it snappy — aim for about 20% shorter than a standard text message, roughly 125 characters or less.',
+            'Skip "image of" or "photo of" — screen readers already announce that it is an image.',
+            'Lead with the primary subject first in case someone moves on before the description finishes.',
+            'Describe what is visibly present — reserve interpretations and assumptions for the caption.',
+            'If there is readable text inside the graphic, accurately transcribe that text into the description.',
+            'Purely decorative? If it adds no meaning or understanding to the page, mark it as decorative.'
+        ];
+        var tipTimer = null;
+
+        function closePollyModal() {
+            if (tipTimer) { clearInterval(tipTimer); tipTimer = null; }
+            var overlay = document.getElementById('polly-alt-modal-overlay');
+            var modal = document.getElementById('polly-alt-modal');
+            if (overlay) overlay.remove();
+            if (modal) modal.remove();
+        }
+
+        window._startPollyModal = function(imgSrc, targetId) {
+            closePollyModal();
+            var overlay = document.createElement('div');
+            overlay.id = 'polly-alt-modal-overlay';
+            overlay.onclick = closePollyModal;
+
+            var modal = document.createElement('div');
+            modal.id = 'polly-alt-modal';
+            modal.dataset.targetId = targetId;
+
+            modal.innerHTML = 
+                '<div class="polly-modal-image-container">' +
+                    '<img src="' + imgSrc + '" alt="Enlarged study preview">' +
+                '</div>' +
+                '<div class="polly-modal-header">' +
+                    '<h3>🦜 Polly Alt Review & Refine</h3>' +
+                    '<button type="button" id="polly-modal-x" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:#64748b;">&times;</button>' +
+                '</div>' +
+                '<div class="polly-modal-body">' +
+                    '<p style="margin:0 0 10px;font-size:0.9rem;color:#334155;">Studying the image and consulting Gemini for tailored WCAG descriptions&hellip;</p>' +
+                    '<div class="polly-tip-rotator"><span id="polly-tip-text"></span></div>' +
+                    '<div style="text-align:right;margin-top:16px;">' +
+                        '<button type="button" id="polly-cancel-btn" style="padding:6px 14px;border:1px solid #cbd5e1;background:#fff;border-radius:4px;cursor:pointer;">Cancel</button>' +
+                    '</div>' +
+                '</div>';
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(modal);
+
+            document.getElementById('polly-modal-x').onclick = closePollyModal;
+            document.getElementById('polly-cancel-btn').onclick = closePollyModal;
+
+            var tipEl = document.getElementById('polly-tip-text');
+            var tIdx = Math.floor(Math.random() * TIPS.length);
+            tipEl.textContent = TIPS[tIdx];
+            tipTimer = setInterval(function() {
+                tIdx = (tIdx + 1) % TIPS.length;
+                tipEl.textContent = TIPS[tIdx];
+            }, 6000);
+        };
+
+        window._handlePollyResponse = function(rawJson) {
+            if (!rawJson) return;
+            var data;
+            try { data = JSON.parse(rawJson); } catch (e) { return; }
+            var modal = document.getElementById('polly-alt-modal');
+            if (!modal) return;
+            if (tipTimer) { clearInterval(tipTimer); tipTimer = null; }
+
+            var body = modal.querySelector('.polly-modal-body');
+            if (!body) return;
+
+            if (data.error) {
+                body.innerHTML = 
+                    '<p style="color:#dc2626;font-size:0.9rem;font-weight:600;">' + data.error + '</p>' +
+                    '<button type="button" id="polly-err-close" style="padding:8px 16px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;cursor:pointer;">Close</button>';
+                document.getElementById('polly-err-close').onclick = closePollyModal;
+                return;
+            }
+
+            var html = '<p style="margin:0 0 14px;font-size:0.875rem;color:#475569;">Select the description that best conveys this image in context:</p>';
+            var choices = data.choices || [];
+            choices.forEach(function(c, idx) {
+                var len = (c.alt || '').length;
+                var over = len > 125 ? ' over-limit' : '';
+                html += 
+                    '<div class="polly-choice-item">' +
+                        '<button type="button" class="polly-choice-select-btn" data-choice-idx="' + idx + '">' +
+                            '<span class="polly-choice-tag">Option ' + (idx + 1) + (c.focus ? ': ' + c.focus : '') + '</span>' +
+                            '<div class="polly-choice-content">' + c.alt + '</div>' +
+                            '<div class="polly-choice-char-count' + over + '">' + len + ' characters</div>' +
+                            (c.explanation ? '<div class="polly-choice-explanation">' + c.explanation + '</div>' : '') +
+                        '</button>' +
+                    '</div>';
+            });
+
+            html += 
+                '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">' +
+                    '<label style="font-size:0.8125rem;color:#475569;cursor:pointer;display:flex;align-items:center;gap:6px;">' +
+                        '<input type="checkbox" id="polly-modal-deco-check"> Mark this image as decorative (clears alt text)' +
+                    '</label>' +
+                    '<button type="button" id="polly-keep-btn" style="padding:6px 14px;border:1px solid #cbd5e1;background:#fff;border-radius:4px;cursor:pointer;font-size:0.8125rem;">Keep Current & Close</button>' +
+                '</div>';
+
+            body.innerHTML = html;
+
+            document.getElementById('polly-keep-btn').onclick = closePollyModal;
+
+            document.getElementById('polly-modal-deco-check').onchange = function(e) {
+                if (e.target.checked) {
+                    applyTextToTarget(modal.dataset.targetId, '');
+                    closePollyModal();
+                }
+            };
+
+            body.querySelectorAll('.polly-choice-select-btn').forEach(function(btn) {
+                btn.onclick = function() {
+                    var idx = parseInt(btn.getAttribute('data-choice-idx'), 10);
+                    var chosen = choices[idx];
+                    if (chosen && chosen.alt) {
+                        applyTextToTarget(modal.dataset.targetId, chosen.alt);
+                    }
+                    closePollyModal();
+                };
+            });
+        };
+
+        function applyTextToTarget(targetId, text) {
+            var root = document.getElementById(targetId);
+            if (!root) return;
+            var ta = root.querySelector('textarea, input[type="text"]');
+            if (ta) {
+                setProgrammaticValue(ta, text);
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closePollyModal();
         });
     })();
 
@@ -5979,6 +6410,60 @@ def _render_reading_order_page(session, page_str, doc_idx, text_sink_id, order_s
         return '<div class="vis-empty">Could not render page.</div>'
 
 
+def _fetch_polly_choices(file_path: str, current_alt: str, target_id: str) -> str:
+    """Generate 3 to 4 diverse WCAG alt text options using Gemini."""
+    if not file_path or not Path(file_path).exists():
+        return json.dumps({
+            "targetId": target_id,
+            "error": "Image file could not be resolved on disk.",
+            "choices": [],
+            "original": current_alt,
+        })
+    config = _load_config()
+    llm_config = config.get("llm", {})
+    try:
+        from vlm.client_factory import create_vlm_client
+        client = create_vlm_client(llm_config)
+        system_prompt = (
+            "You are an accessibility expert writing alt text for images in PDF documents. "
+            "Generate exactly 3 to 4 distinct alt text variations following these rules:\n"
+            "1. Each alt text must be concise, descriptive, and under 125 characters.\n"
+            "2. Do NOT begin with 'image of', 'photo of', or 'picture of'.\n"
+            "3. Foreground a DIFFERENT visual element or perspective in each variation.\n"
+            "4. If text, a logo, or numbers appear, transcribe them accurately in at least one variation.\n"
+            "5. Return ONLY a valid JSON array of objects with keys:\n"
+            "   - 'alt': (string) purely visual description under 125 characters.\n"
+            "   - 'focus': (string) short noun phrase naming the foregrounded element.\n"
+            "   - 'explanation': (string) brief sentence explaining why this framing provides useful context.\n"
+            "Do not include markdown code fences or commentary outside the JSON array."
+        )
+        user_prompt = "Generate 3 to 4 diverse alt text options for this image in valid JSON format."
+        if current_alt:
+            user_prompt += f"\nCurrent draft: \"{current_alt}\""
+
+        raw = client.generate(prompt=user_prompt, images=[file_path], system_prompt=system_prompt)
+        clean = re.sub(r"^```json\s*", "", raw.strip(), flags=re.IGNORECASE)
+        clean = re.sub(r"^```\s*", "", clean)
+        clean = re.sub(r"```\s*$", "", clean).strip()
+        choices = json.loads(clean)
+        if not isinstance(choices, list):
+            choices = [choices]
+        return json.dumps({
+            "targetId": target_id,
+            "choices": choices,
+            "original": current_alt,
+            "error": None,
+        })
+    except Exception as exc:
+        logger.exception("Polly generation failed: %s", exc)
+        return json.dumps({
+            "targetId": target_id,
+            "error": f"Polly generation error: {str(exc)}",
+            "choices": [],
+            "original": current_alt,
+        })
+
+
 def _build_overview_metrics_html(doc: dict) -> str:
     """Build summary metric cards for the Overview tab."""
     pr = doc.get("pipeline_result", {})
@@ -6143,6 +6628,18 @@ def _on_caption_edit(edits: dict, key: str, new_value: str) -> dict:
     else:
         value = cap_edit_value(new_value, is_alt=True, limits=_editor_limits())
     return _merge_editor_entries(edits, {key: value})
+
+
+def _on_decorative_toggle(edits: dict, key: str, is_decorative: bool, prior_alt: str) -> tuple:
+    """Toggle an image's decorative state, clearing alt text and locking inputs when checked."""
+    val = "" if is_decorative else (prior_alt or "")
+    new_edits = _merge_editor_entries(edits, {key: val})
+    return (
+        new_edits,
+        gr.update(value="" if is_decorative else prior_alt, interactive=not is_decorative),
+        gr.update(interactive=not is_decorative),
+    )
+
 
 
 def _on_sr_edits_batch(edits: dict, doc_idx: int, payload_json: str) -> dict:
@@ -6706,7 +7203,7 @@ with gr.Blocks(
                                         table_captions = doc.get("table_captions", {})
                                         editable_images = [
                                             r for r in image_records
-                                            if r.get("outcome") in ("generated", "harvested", "needs_manual_alt_text")
+                                            if r.get("outcome") in ("generated", "harvested", "needs_manual_alt_text", "decorative")
                                         ]
                                         caption_entries = table_captions.get("captions", {})
                                         # Build formula entries from VLM descriptions
@@ -6770,12 +7267,25 @@ with gr.Blocks(
                                                 )
 
                                                 # Image alt text — side-by-side: thumbnail | textbox
+                                                polly_sink = gr.Textbox(
+                                                    value="", visible=True, show_label=False,
+                                                    elem_id=f"polly-sink-{rid}-{i}",
+                                                    elem_classes=["sr-edit-sink", "polly-sink"],
+                                                    key=k("polly-sink", i),
+                                                )
+                                                polly_sink.change(
+                                                    fn=None, inputs=[polly_sink],
+                                                    js="(val) => window._handlePollyResponse(val)",
+                                                )
+
                                                 for img_idx, rec in enumerate(editable_images):
                                                     src = rec.get("src", "")
                                                     alt_text = rec.get("alt_text", "")
                                                     page = rec.get("page_number")
                                                     file_path = rec.get("file_path")
                                                     page_label = f"Page {page}" if page else ""
+                                                    is_dec = rec.get("outcome") == "decorative"
+                                                    tb_target_id = f"polly-target-{rid}-{i}-{img_idx}"
                                                     with gr.Row(key=k("img-row", i, img_idx)):
                                                         with gr.Column(scale=1, min_width=140, key=k("img-thumb-col", i, img_idx)):
                                                             thumb_html = ""
@@ -6795,17 +7305,44 @@ with gr.Blocks(
                                                             if thumb_html:
                                                                 gr.HTML(value=thumb_html, key=k("img-thumb", i, img_idx))
                                                         with gr.Column(scale=3, key=k("img-text-col", i, img_idx)):
+                                                            dec_cb = gr.Checkbox(
+                                                                value=is_dec,
+                                                                label="Mark as decorative (ignore / artifact)",
+                                                                key=k("img-dec", i, img_idx),
+                                                                elem_classes=["decorative-checkbox"],
+                                                            )
                                                             tb = gr.Textbox(
-                                                                value=alt_text,
+                                                                value="" if is_dec else alt_text,
                                                                 label=f"Image {img_idx + 1} alt text",
-                                                                lines=3, max_lines=8, interactive=True,
+                                                                lines=3, max_lines=8, interactive=not is_dec,
                                                                 key=k("img-alt", i, img_idx),
+                                                                elem_id=tb_target_id,
                                                                 elem_classes=["alt-text-editor"],
                                                             )
                                                             tb.change(
                                                                 fn=_on_caption_edit,
                                                                 inputs=[caption_edits_state, gr.State(f"img:{i}:{img_idx}:{src}"), tb],
                                                                 outputs=[caption_edits_state],
+                                                            )
+                                                            polly_btn = gr.Button(
+                                                                "🦜 Review & Refine with Polly",
+                                                                size="sm",
+                                                                interactive=not is_dec,
+                                                                key=k("polly-btn", i, img_idx),
+                                                                elem_classes=["polly-gen-btn"],
+                                                            )
+                                                            dec_cb.change(
+                                                                fn=_on_decorative_toggle,
+                                                                inputs=[caption_edits_state, gr.State(f"img:{i}:{img_idx}:{src}"), dec_cb, tb],
+                                                                outputs=[caption_edits_state, tb, polly_btn],
+                                                            )
+                                                            _img_url_js = json.dumps(_file_url(file_path))
+                                                            _tb_id_js = json.dumps(tb_target_id)
+                                                            polly_btn.click(
+                                                                fn=_fetch_polly_choices,
+                                                                inputs=[gr.State(file_path), tb, gr.State(tb_target_id)],
+                                                                outputs=[polly_sink],
+                                                                js=f"() => window._startPollyModal({_img_url_js}, {_tb_id_js})",
                                                             )
 
                                                 # Table captions

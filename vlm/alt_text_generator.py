@@ -23,28 +23,33 @@ from vlm.image_preprocessing import prepare_image_for_vlm
 
 logger = logging.getLogger(__name__)
 
-# System prompt for WCAG-compliant alt text generation
-ALT_TEXT_SYSTEM_PROMPT = """You are an accessibility specialist generating alt text for images in PDF documents converted to HTML. Your alt text must comply with WCAG 2.1 AA standards.
+# System prompt for Polly-style WCAG alt text generation with options
+ALT_TEXT_SYSTEM_PROMPT = """You are an accessibility and WCAG expert writing alternative text options for images in PDF documents.
 
-Rules:
-1. HARD LIMIT: Your entire response must be 150 characters or fewer. Count the characters before responding. If your description exceeds 150 characters, shorten it — do not exceed this limit under any circumstances.
-2. Focus on the information the image conveys, not how it looks ("bar chart showing sales growth" not "colorful image").
-3. For charts/graphs: state the type of visualization and the key takeaway.
-4. For diagrams: describe the structure and relationships shown.
-5. For photos: describe the relevant content and context.
-6. For equations/formulas: provide the mathematical expression in text.
-7. For decorative images: respond with exactly "decorative".
-8. Do NOT start with "Image of" or "Picture of" — just describe the content directly.
-9. Do NOT include the word "alt text" in your response.
-10. Respond with ONLY the alt text, nothing else."""
+Generate exactly 3 distinct alt text variations following these rules:
+1. LENGTH & BREVITY: Keep descriptions succinct. For simple images, aim for 1-2 concise sentences (under 125 characters). For complex charts, graphs, and diagrams, use up to 2-3 informative sentences (maximum 250-300 characters) to adequately report key data and trends.
+2. Do NOT begin with "image of", "photo of", or "picture of".
+3. Write in plain language, present tense, active voice.
+4. STRICTLY VISUAL: Describe only what is physically visible in the image.
+5. Foreground a DIFFERENT visual element in each variation as the opening focus.
+6. Analyze the image and categorize it to apply the appropriate type:
+   a. Charts & Graphs: State the chart type, axes, and key data points or overall trend. Do not just say "a bar chart"; report the figures.
+   b. Diagrams & Flowcharts: Describe the structure, flow, sequential steps, or relationships between components.
+   c. Logos, Badges & Text Images: Transcribe the visible text verbatim. Do not describe colors or styling unless essential to identification.
+   d. Photographs & Illustrations: Describe the focal subject, setting, and relevant action concisely. Avoid speculative commentary or visual fluff.
+7. Return ONLY a valid JSON array of objects with these exact keys:
+   - "alt": (string) The visual description adhering to the length guidelines above.
+   - "focus": (string) Short noun phrase naming the foregrounded element.
+   - "explanation": (string) One sentence explaining why this framing provides useful context.
+
+Do not include any text outside the JSON array."""
 
 # Prompt template for individual images
-ALT_TEXT_PROMPT = """Generate alt text for this image from a PDF document.
+ALT_TEXT_PROMPT = """Analyze this image from a document.
 
 {context}
 
-Provide concise, descriptive alt text suitable for a screen reader."""
-
+Provide 3 distinct alternative text options in the requested JSON format."""
 
 def generate_alt_text_for_images(
     html_path: str,
@@ -280,47 +285,67 @@ def generate_alt_text_for_images(
     return result
 
 
-def _parse_confidence(raw_text: str) -> Tuple[str, Optional[int]]:
-    """Extract alt text and confidence score from VLM response.
+def _parse_confidence(raw_text: str) -> Tuple[str, Optional[int], List[Dict[str, str]]]:
+    """Extract alt text, confidence score, and Polly candidate choices from VLM response."""
+    choices = []
+    clean_text = raw_text.strip()
+    
+    # Strip markdown code blocks if present
+    if clean_text.startswith("```"):
+        clean_text = re.sub(r"^```(?:json)?\s*", "", clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r"\s*```", "", clean_text)
+        clean_text = clean_text.strip()
+        
+    try:
+        parsed = json.loads(clean_text)
+        if isinstance(parsed, list) and len(parsed) > 0:
+            choices = parsed
+            primary_alt = parsed[0].get("alt", "").strip()
+            return primary_alt, 95, choices
+    except Exception:
+        pass
 
-    Expects format:
-        <alt text>
-        CONFIDENCE: XX%
-
-    Returns:
-        (clean_alt_text, confidence_int_or_None)
-    """
-    # Try to find CONFIDENCE: XX% anywhere in the response
+    # Fallback to single text parsing if JSON is absent
     match = re.search(r'CONFIDENCE:\s*(\d{1,3})%', raw_text, re.IGNORECASE)
     if match:
         confidence = min(int(match.group(1)), 100)
-        # Remove the confidence line from the alt text
         alt_text = re.sub(
-            r'\n?\s*CONFIDENCE:\s*\d{1,3}%\s*$', '', raw_text, flags=re.IGNORECASE,
+            r'\n?\s*CONFIDENCE:\s*\d{1,3}%\s*', '', raw_text, flags=re.IGNORECASE,
         ).strip()
-        return alt_text, confidence
-    return raw_text.strip(), None
+        return alt_text, confidence, []
+    return raw_text.strip(), None, []
+
 
 
 def _generate_single_alt_text(client, img_file: str, prompt: str) -> Dict[str, Any]:
-    """Call VLM for a single image. Thread-safe — no soup mutation.
-
-    Returns:
-        {"alt_text": str, "confidence": int|None} on success,
-        {"alt_text": None, "error": str} on failure.
-    """
+    """Call VLM for a single image, parsing structured Polly Alt options."""
+    import json
     try:
         raw = client.generate(
             prompt=prompt,
             images=[img_file],
             system_prompt=ALT_TEXT_SYSTEM_PROMPT,
         )
-        alt_text, confidence = _parse_confidence(raw)
-        alt_text = alt_text.strip('"').strip("'")
-        return {"alt_text": alt_text, "confidence": confidence}
-    except Exception as e:
-        return {"alt_text": None, "confidence": None, "error": str(e)}
+        # Strip potential markdown fences
+        clean_json = re.sub(r"^```(?:json)?\s*", "", raw.strip(), flags=re.IGNORECASE)
+        clean_json = re.sub(r"\s*```$", "", clean_json).strip()
 
+        options = []
+        primary_alt = ""
+        try:
+            parsed = json.loads(clean_json)
+            if isinstance(parsed, list) and len(parsed) > 0:
+                options = parsed
+                primary_alt = parsed[0].get("alt", "").strip()
+        except Exception:
+            # Fallback if model returned plain text instead of JSON
+            primary_alt, _ = _parse_confidence(raw)
+            primary_alt = primary_alt.strip('"').strip("'")
+            options = [{"alt": primary_alt, "focus": "General", "explanation": "Direct description."}]
+
+        return {"alt_text": primary_alt, "options": options, "confidence": 95}
+    except Exception as e:
+        return {"alt_text": None, "options": [], "confidence": None, "error": str(e)}
 
 def _apply_vlm_results(work_items, vlm_results, skipped_early=None):
     """Apply VLM results to image tags.
@@ -355,7 +380,7 @@ def _apply_vlm_results(work_items, vlm_results, skipped_early=None):
             continue
 
         alt_text = result.get("alt_text", "")
-
+        choices = result.get("choices", [])
         confidence = result.get("confidence")
 
         # An empty or near-empty completion is a FAILURE, not a description.
@@ -380,10 +405,11 @@ def _apply_vlm_results(work_items, vlm_results, skipped_early=None):
             alt_texts[src] = alt_text
             updated_count += 1
             image_records.append({
-                "src": src, "file_path": img_file, "alt_text": "",
+                "src": src, "file_path": img_file, "alt_text": alt_text,
                 "outcome": "decorative", "skip_reason": None,
                 "page_number": page_number, "confidence": confidence,
                 "image_preprocessing": item.get("prepared_meta") or None,
+                "options": result.get("options", []),
             })
         else:
             img_tag["alt"] = alt_text
@@ -399,6 +425,7 @@ def _apply_vlm_results(work_items, vlm_results, skipped_early=None):
                 "src": src, "file_path": img_file, "alt_text": alt_text,
                 "outcome": "generated", "skip_reason": None,
                 "page_number": page_number, "confidence": confidence,
+                "choices": choices,
                 "image_preprocessing": item.get("prepared_meta") or None,
             })
 

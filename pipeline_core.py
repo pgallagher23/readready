@@ -1415,6 +1415,12 @@ def rerun_output_phases(
             img_tag = soup.find("img", attrs={"src": src})
             if img_tag:
                 img_tag["alt"] = new_alt
+                if not (new_alt or "").strip():
+                    img_tag["role"] = "presentation"
+                    img_tag["aria-hidden"] = "true"
+                else:
+                    img_tag.attrs.pop("role", None)
+                    img_tag.attrs.pop("aria-hidden", None)
                 edits_applied += 1
                 logger.info("  Updated alt text for image src=%s", src)
 
@@ -1428,6 +1434,7 @@ def rerun_output_phases(
             for rec in image_records:
                 if rec.get("src") == src:
                     rec["alt_text"] = new_alt
+                    rec["outcome"] = "decorative" if not (new_alt or "").strip() else "generated"
                     break
         alt_text_data = dict(alt_text_data)
         alt_text_data["alt_texts"] = alt_texts_dict
